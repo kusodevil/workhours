@@ -3,6 +3,7 @@ import { AuthProvider } from './context/AuthContext';
 import { ProjectProvider } from './context/ProjectContext';
 import { TimeEntryProvider } from './context/TimeEntryContext';
 import { Layout } from './components/Layout';
+import { ProtectedRoute } from './components/ProtectedRoute';
 import { Dashboard } from './pages/Dashboard';
 import { Login } from './pages/Login';
 import { Register } from './pages/Register';
@@ -19,13 +20,13 @@ function App() {
           <BrowserRouter>
           <Layout>
           <Routes>
-            <Route path="/" element={<Dashboard />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
-            <Route path="/timesheet" element={<Timesheet />} />
-            <Route path="/my-records" element={<MyRecords />} />
-            <Route path="/trends" element={<Trends />} />
-            <Route path="/settings" element={<Settings />} />
+            <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+            <Route path="/timesheet" element={<ProtectedRoute><Timesheet /></ProtectedRoute>} />
+            <Route path="/my-records" element={<ProtectedRoute><MyRecords /></ProtectedRoute>} />
+            <Route path="/trends" element={<ProtectedRoute><Trends /></ProtectedRoute>} />
+            <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
           </Routes>
             </Layout>
           </BrowserRouter>

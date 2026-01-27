@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.1] - 2026-01-27
+
+### Fixed
+- 🔒 **路由保護問題修復**
+  - 新增 ProtectedRoute 組件保護需要認證的頁面
+  - 未登入使用者現在會被重定向到登入頁面
+  - 登入檢查期間顯示載入畫面
+  - 修復未登入狀態下仍可訪問儀表板等頁面的安全問題
+
+### Security
+- 強化路由安全，確保所有功能頁面都需要認證才能訪問
+
 ## [1.0.0] - 2026-01-27
 
 ### Added
@@ -55,4 +67,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 使用者只能查看/編輯自己的工時紀錄
 - Storage 頭像上傳安全策略
 
-[1.0.0]: https://github.com/your-org/workhours/releases/tag/v1.0.0
+[1.0.1]: https://github.com/kusodevil/workhours/releases/tag/v1.0.1
+[1.0.0]: https://github.com/kusodevil/workhours/releases/tag/v1.0.0
