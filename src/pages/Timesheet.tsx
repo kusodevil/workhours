@@ -16,7 +16,7 @@ interface TimeEntryForm {
 export function Timesheet() {
   const { isAuthenticated, isLoading: authLoading } = useAuth();
   const { addEntry } = useTimeEntries();
-  const { projects, addProject, deleteProject, isLoading: projectsLoading } = useProjects();
+  const { projects, addProject, updateProject, deleteProject, isLoading: projectsLoading } = useProjects();
   const [entries, setEntries] = useState<TimeEntryForm[]>([
     { projectId: '', hours: 0, date: new Date().toISOString().split('T')[0], note: '' },
   ]);
@@ -34,6 +34,12 @@ export function Timesheet() {
   const [showManageProjects, setShowManageProjects] = useState(false);
   const [deletingProjectId, setDeletingProjectId] = useState<string | null>(null);
   const [projectToDelete, setProjectToDelete] = useState<string | null>(null);
+
+  // Edit project modal state
+  const [editingProject, setEditingProject] = useState<string | null>(null);
+  const [editProjectName, setEditProjectName] = useState('');
+  const [editProjectColor, setEditProjectColor] = useState(PROJECT_COLORS[0]);
+  const [updatingProject, setUpdatingProject] = useState(false);
 
   if (authLoading) {
     return <div className="flex justify-center py-12">載入中...</div>;
@@ -113,6 +119,34 @@ export function Timesheet() {
       setError(result.error);
     } else {
       setProjectToDelete(null);
+    }
+  };
+
+  const handleEditProject = (projectId: string) => {
+    const project = projects.find(p => p.id === projectId);
+    if (project) {
+      setEditingProject(projectId);
+      setEditProjectName(project.name);
+      setEditProjectColor(project.color);
+    }
+  };
+
+  const handleUpdateProject = async () => {
+    if (!editingProject || !editProjectName.trim()) return;
+
+    setUpdatingProject(true);
+    const result = await updateProject(editingProject, {
+      name: editProjectName.trim(),
+      color: editProjectColor,
+    });
+    setUpdatingProject(false);
+
+    if (result.error) {
+      setError(result.error);
+    } else {
+      setEditingProject(null);
+      setEditProjectName('');
+      setEditProjectColor(PROJECT_COLORS[0]);
     }
   };
 
@@ -334,34 +368,46 @@ export function Timesheet() {
           {projects.length === 0 ? (
             <p className="text-gray-500 text-center py-4">尚無專案</p>
           ) : (
-            projects.map(project => (
-              <div
-                key={project.id}
-                className="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50"
-              >
-                <div className="flex items-center gap-3">
-                  <div
-                    className="w-4 h-4 rounded-full"
-                    style={{ backgroundColor: project.color }}
-                  />
-                  <span className="font-medium text-gray-900">{project.name}</span>
-                  {!project.is_active && (
-                    <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
-                      已停用
-                    </span>
-                  )}
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setProjectToDelete(project.id)}
-                  disabled={deletingProjectId === project.id}
-                  className="text-red-600 hover:text-red-700 disabled:opacity-50"
-                  title="刪除專案"
+            <div className="max-h-96 overflow-y-auto space-y-3 pr-2">
+              {projects.map(project => (
+                <div
+                  key={project.id}
+                  className="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50"
                 >
-                  {deletingProjectId === project.id ? '刪除中...' : '🗑️'}
-                </button>
-              </div>
-            ))
+                  <div className="flex items-center gap-3">
+                    <div
+                      className="w-4 h-4 rounded-full"
+                      style={{ backgroundColor: project.color }}
+                    />
+                    <span className="font-medium text-gray-900">{project.name}</span>
+                    {!project.is_active && (
+                      <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                        已停用
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => handleEditProject(project.id)}
+                      className="text-blue-600 hover:text-blue-700"
+                      title="編輯專案"
+                    >
+                      ✏️
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setProjectToDelete(project.id)}
+                      disabled={deletingProjectId === project.id}
+                      className="text-red-600 hover:text-red-700 disabled:opacity-50"
+                      title="刪除專案"
+                    >
+                      {deletingProjectId === project.id ? '刪除中...' : '🗑️'}
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
           )}
           <div className="pt-4">
             <Button
@@ -375,6 +421,60 @@ export function Timesheet() {
           </div>
         </div>
       </Modal>
+
+      {/* Edit Project Modal */}
+      {editingProject && (
+        <Modal
+          isOpen={true}
+          onClose={() => setEditingProject(null)}
+          title="編輯專案"
+        >
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">專案名稱</label>
+              <input
+                type="text"
+                value={editProjectName}
+                onChange={e => setEditProjectName(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none"
+                placeholder="輸入專案名稱"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">選擇顏色</label>
+              <div className="flex gap-2 flex-wrap">
+                {PROJECT_COLORS.map(color => (
+                  <button
+                    key={color}
+                    type="button"
+                    onClick={() => setEditProjectColor(color)}
+                    className={`w-8 h-8 rounded-full ${editProjectColor === color ? 'ring-2 ring-offset-2 ring-blue-500' : ''}`}
+                    style={{ backgroundColor: color }}
+                  />
+                ))}
+              </div>
+            </div>
+            <div className="flex gap-3 pt-4">
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => setEditingProject(null)}
+                className="flex-1"
+              >
+                取消
+              </Button>
+              <Button
+                type="button"
+                onClick={handleUpdateProject}
+                disabled={updatingProject || !editProjectName.trim()}
+                className="flex-1"
+              >
+                {updatingProject ? '更新中...' : '儲存變更'}
+              </Button>
+            </div>
+          </div>
+        </Modal>
+      )}
 
       {/* Delete Confirmation Modal */}
       {projectToDelete && (
