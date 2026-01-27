@@ -140,32 +140,32 @@
 
 ## 📁 專案結構
 
-\`\`\`
+```
 workhours/
-├── src/
-│   ├── components/          # React 元件
-│   │   ├── Layout.tsx       # 主要佈局
-│   │   └── ui/              # UI 元件庫
-│   ├── context/             # React Context
-│   │   ├── AuthContext.tsx  # 認證狀態
-│   │   ├── ProjectContext.tsx   # 專案管理
-│   │   └── TimeEntryContext.tsx # 工時管理
-│   ├── pages/               # 頁面元件
-│   │   ├── Dashboard.tsx    # 總覽儀表板
-│   │   ├── Timesheet.tsx    # 工時填寫
-│   │   ├── MyRecords.tsx    # 個人紀錄
-│   │   ├── Trends.tsx       # 趨勢分析
-│   │   ├── Settings.tsx     # 個人設定
-│   │   ├── Login.tsx        # 登入頁
-│   │   └── Register.tsx     # 註冊頁
-│   ├── types/               # TypeScript 型別定義
-│   ├── lib/                 # 工具函式與設定
-│   └── App.tsx              # 主要應用元件
-├── docs/                    # 文件
-├── CHANGELOG.md             # 更新日誌
-├── CONTRIBUTING.md          # 貢獻指南
-└── README.md                # 本文件
-\`\`\`
+  src/
+    components/        # React 元件
+      Layout.tsx       # 主要佈局
+      ui/              # UI 元件庫
+    context/           # React Context
+      AuthContext.tsx  # 認證狀態
+      ProjectContext.tsx   # 專案管理
+      TimeEntryContext.tsx # 工時管理
+    pages/             # 頁面元件
+      Dashboard.tsx    # 總覽儀表板
+      Timesheet.tsx    # 工時填寫
+      MyRecords.tsx    # 個人紀錄
+      Trends.tsx       # 趨勢分析
+      Settings.tsx     # 個人設定
+      Login.tsx        # 登入頁
+      Register.tsx     # 註冊頁
+    types/             # TypeScript 型別定義
+    lib/               # 工具函式與設定
+    App.tsx            # 主要應用元件
+  docs/                # 文件
+  CHANGELOG.md         # 更新日誌
+  CONTRIBUTING.md      # 貢獻指南
+  README.md            # 本文件
+```
 
 ## 💻 開發指南
 
