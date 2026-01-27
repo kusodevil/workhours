@@ -5,27 +5,6 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.1.0] - 2026-01-27
-
-### Added
-- 🎉 **Google 帳號登入功能**
-  - 支援 Google OAuth 2.0 快速登入
-  - 登入頁面新增「使用 Google 登入」按鈕
-  - 註冊頁面新增「使用 Google 註冊」按鈕
-  - 自動建立使用者資料（從 Google 帳號同步）
-  - 新增 `loginWithGoogle()` 方法到 AuthContext
-  - 完整的 Google OAuth 設定文檔（docs/GOOGLE_OAUTH.md）
-
-### Changed
-- 更新登入和註冊頁面 UI，添加分隔線和 Google 按鈕
-- 更新 README.md 說明 Google OAuth 功能
-
-### Documentation
-- 新增 docs/GOOGLE_OAUTH.md 詳細設定指南
-- 包含 Google Cloud Console 設定步驟
-- 包含 Supabase Provider 設定步驟
-- 故障排除和安全性建議
-
 ## [1.0.2] - 2026-01-27
 
 ### Fixed
@@ -96,7 +75,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 使用者只能查看/編輯自己的工時紀錄
 - Storage 頭像上傳安全策略
 
-[1.1.0]: https://github.com/kusodevil/workhours/releases/tag/v1.1.0
 [1.0.2]: https://github.com/kusodevil/workhours/releases/tag/v1.0.2
 [1.0.1]: https://github.com/kusodevil/workhours/releases/tag/v1.0.1
 [1.0.0]: https://github.com/kusodevil/workhours/releases/tag/v1.0.0
