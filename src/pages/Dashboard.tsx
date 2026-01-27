@@ -173,7 +173,19 @@ export function Dashboard() {
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="name" />
                   <YAxis />
-                  <Tooltip />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: 'rgba(255, 255, 255, 0.98)',
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '8px',
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
+                    }}
+                    wrapperStyle={{
+                      outline: 'none',
+                      zIndex: 1000
+                    }}
+                    cursor={false}
+                  />
                   <Legend />
                   {activeProjects.map(project => (
                     <Bar key={project.id} dataKey={project.name} stackId="a" fill={project.color} />
@@ -193,14 +205,14 @@ export function Dashboard() {
           <h2 className="text-lg font-semibold text-gray-900 mb-4">專案時數比例</h2>
           {projectStats.length > 0 ? (
             <div className="outline-none focus:outline-none [&_*]:outline-none [&_*]:focus:outline-none">
-              <ResponsiveContainer width="100%" height={300}>
+              <ResponsiveContainer width="100%" height={340}>
                 <PieChart>
                   <Pie
                     data={projectStats}
                     cx="50%"
                     cy="50%"
                     innerRadius={60}
-                    outerRadius={100}
+                    outerRadius={85}
                     paddingAngle={2}
                     dataKey="hours"
                     label={({ name, percent }) => `${name} ${((percent ?? 0) * 100).toFixed(0)}%`}
@@ -209,12 +221,19 @@ export function Dashboard() {
                       <Cell key={`cell-${index}`} fill={entry.color} />
                     ))}
                   </Pie>
-                  <Tooltip />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: 'white',
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '8px',
+                      opacity: 1
+                    }}
+                  />
                 </PieChart>
               </ResponsiveContainer>
             </div>
           ) : (
-            <div className="h-[300px] flex items-center justify-center text-gray-400">
+            <div className="h-[340px] flex items-center justify-center text-gray-400">
               本週尚無工時紀錄
             </div>
           )}

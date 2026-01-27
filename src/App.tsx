@@ -11,6 +11,7 @@ import { Timesheet } from './pages/Timesheet';
 import { MyRecords } from './pages/MyRecords';
 import { Trends } from './pages/Trends';
 import { Settings } from './pages/Settings';
+import { AdminUsers } from './pages/AdminUsers';
 
 function App() {
   return (
@@ -27,6 +28,7 @@ function App() {
             <Route path="/my-records" element={<ProtectedRoute><MyRecords /></ProtectedRoute>} />
             <Route path="/trends" element={<ProtectedRoute><Trends /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+            <Route path="/admin/users" element={<ProtectedRoute><AdminUsers /></ProtectedRoute>} />
           </Routes>
             </Layout>
           </BrowserRouter>

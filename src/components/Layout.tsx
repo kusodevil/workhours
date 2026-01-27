@@ -5,8 +5,15 @@ interface LayoutProps {
   children: React.ReactNode;
 }
 
+interface NavItem {
+  path: string;
+  label: string;
+  public: boolean;
+  adminOnly?: boolean;
+}
+
 export function Layout({ children }: LayoutProps) {
-  const { profile, isAuthenticated, logout } = useAuth();
+  const { profile, isAuthenticated, isAdmin, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -15,11 +22,12 @@ export function Layout({ children }: LayoutProps) {
     navigate('/');
   };
 
-  const navItems = [
+  const navItems: NavItem[] = [
     { path: '/', label: '總覽', public: false },
     { path: '/timesheet', label: '填寫工時', public: false },
     { path: '/my-records', label: '我的紀錄', public: false },
     { path: '/trends', label: '趨勢分析', public: false },
+    { path: '/admin/users', label: '管理帳號', public: false, adminOnly: true },
   ];
 
   return (
@@ -33,8 +41,9 @@ export function Layout({ children }: LayoutProps) {
                 WorkHours
               </Link>
               <nav className="hidden md:flex gap-1">
-                {navItems.map(item => (
-                  (item.public || isAuthenticated) && (
+                {navItems.map(item => {
+                  const shouldShow = (item.public || isAuthenticated) && (!item.adminOnly || isAdmin);
+                  return shouldShow && (
                     <Link
                       key={item.path}
                       to={item.path}
@@ -46,8 +55,8 @@ export function Layout({ children }: LayoutProps) {
                     >
                       {item.label}
                     </Link>
-                  )
-                ))}
+                  );
+                })}
               </nav>
             </div>
 
