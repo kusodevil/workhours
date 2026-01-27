@@ -98,6 +98,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (error) {
       return { error: error.message };
     }
+
+    // 註冊成功後會自動登入（session 自動儲存在 localStorage）
+    // onAuthStateChange 會自動處理 user 和 profile 狀態更新
     return { error: null };
   };
 
