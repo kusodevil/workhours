@@ -9,6 +9,7 @@ import { Modal, ConfirmModal } from '../components/ui';
 import { Button } from '../components/ui';
 import { Input, Select } from '../components/ui';
 import { Card } from '../components/ui';
+import { ExportButton } from '../components/ExportButton';
 import type { TimeEntry } from '../types/database';
 
 interface EditModalProps {
@@ -85,7 +86,7 @@ function EditModal({ entry, projects, onClose, onSave }: EditModalProps) {
 }
 
 export function MyRecords() {
-  const { isAuthenticated, user, isLoading: authLoading } = useAuth();
+  const { isAuthenticated, user, profile, isLoading: authLoading } = useAuth();
   const { timeEntries, updateEntry, deleteEntry, isLoading: entriesLoading } = useTimeEntries();
   const { projects, getProjectById } = useProjects();
   const [editingEntry, setEditingEntry] = useState<TimeEntry | null>(null);
@@ -93,7 +94,7 @@ export function MyRecords() {
   const [selectedWeek, setSelectedWeek] = useState<string>('all');
 
   if (authLoading) {
-    return <div className="flex justify-center py-12">載入中...</div>;
+    return <div className="flex justify-center py-12 text-gray-900 dark:text-gray-100">載入中...</div>;
   }
 
   if (!isAuthenticated) {
@@ -204,53 +205,60 @@ export function MyRecords() {
   };
 
   if (entriesLoading) {
-    return <div className="flex justify-center py-12">載入中...</div>;
+    return <div className="flex justify-center py-12 text-gray-900 dark:text-gray-100">載入中...</div>;
   }
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">我的工時紀錄</h1>
-          <p className="text-gray-500 mt-1">查看並管理您過去填寫的工時紀錄</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">我的工時紀錄</h1>
+          <p className="text-gray-500 dark:text-gray-400 mt-1">查看並管理您過去填寫的工時紀錄</p>
         </div>
-        <select
-          value={selectedWeek}
-          onChange={e => setSelectedWeek(e.target.value)}
-          className="px-4 py-2 border border-gray-300 rounded-lg bg-white focus:outline-none"
-        >
-          <option value="all">全部週次</option>
-          {weekOptions.map((opt, index) => (
-            <option key={opt.value} value={opt.value}>
-              {index === 0 ? '本週 ' : ''}{opt.label}
-            </option>
-          ))}
-        </select>
+        <div className="flex gap-3">
+          <select
+            value={selectedWeek}
+            onChange={e => setSelectedWeek(e.target.value)}
+            className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none"
+          >
+            <option value="all">全部週次</option>
+            {weekOptions.map((opt, index) => (
+              <option key={opt.value} value={opt.value}>
+                {index === 0 ? '本週 ' : ''}{opt.label}
+              </option>
+            ))}
+          </select>
+          <ExportButton
+            entries={filteredEntries}
+            projects={projects}
+            userName={profile?.username || '使用者'}
+          />
+        </div>
       </div>
 
       {/* Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <Card>
-          <p className="text-sm text-gray-500">本週工時</p>
-          <p className="text-3xl font-bold text-gray-900 mt-1">{stats.thisWeekHours} 小時</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">本週工時</p>
+          <p className="text-3xl font-bold text-gray-900 dark:text-gray-100 mt-1">{stats.thisWeekHours} 小時</p>
         </Card>
         <Card>
-          <p className="text-sm text-gray-500">上週工時</p>
-          <p className="text-3xl font-bold text-gray-900 mt-1">{stats.lastWeekHours} 小時</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">上週工時</p>
+          <p className="text-3xl font-bold text-gray-900 dark:text-gray-100 mt-1">{stats.lastWeekHours} 小時</p>
         </Card>
         <Card>
-          <p className="text-sm text-gray-500">累計總工時</p>
-          <p className="text-3xl font-bold text-gray-900 mt-1">{stats.totalHours} 小時</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">累計總工時</p>
+          <p className="text-3xl font-bold text-gray-900 dark:text-gray-100 mt-1">{stats.totalHours} 小時</p>
         </Card>
       </div>
 
       {/* Filtered Stats */}
       {selectedWeek !== 'all' && (
-        <div className="p-4 bg-blue-50 rounded-xl flex items-center justify-between">
-          <span className="text-blue-800">
+        <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl flex items-center justify-between">
+          <span className="text-blue-800 dark:text-blue-400">
             篩選結果：{filteredStats.entryCount} 筆紀錄
           </span>
-          <span className="font-semibold text-blue-900">
+          <span className="font-semibold text-blue-900 dark:text-blue-300">
             共 {filteredStats.totalHours} 小時
           </span>
         </div>
@@ -260,38 +268,38 @@ export function MyRecords() {
       <div className="space-y-4">
         {entriesByWeek.map(week => (
           <Card key={week.weekStart.toISOString()} padding={false} className="overflow-hidden">
-            <div className="px-6 py-4 bg-gray-50 border-b border-gray-200 flex justify-between items-center">
-              <h3 className="font-semibold text-gray-900">
+            <div className="px-6 py-4 bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+              <h3 className="font-semibold text-gray-900 dark:text-gray-100">
                 {format(week.weekStart, 'M月d日', { locale: zhTW })} - {format(week.weekEnd, 'M月d日', { locale: zhTW })}
               </h3>
-              <span className="text-sm font-medium text-blue-600">
+              <span className="text-sm font-medium text-blue-600 dark:text-blue-400">
                 共 {week.totalHours} 小時
               </span>
             </div>
-            <div className="divide-y divide-gray-100">
+            <div className="divide-y divide-gray-100 dark:divide-gray-700">
               {week.entries.map(entry => {
                 const project = getProjectById(entry.project_id);
                 return (
-                  <div key={entry.id} className="px-6 py-4 flex items-center justify-between hover:bg-gray-50 group">
+                  <div key={entry.id} className="px-6 py-4 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-700/50 group">
                     <div className="flex items-center gap-4">
                       <span
                         className="w-3 h-3 rounded-full"
                         style={{ backgroundColor: project?.color || '#gray' }}
                       />
                       <div>
-                        <p className="font-medium text-gray-900">{project?.name || '未知專案'}</p>
-                        <p className="text-sm text-gray-500">
+                        <p className="font-medium text-gray-900 dark:text-gray-100">{project?.name || '未知專案'}</p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">
                           {format(new Date(entry.date), 'M/d (EEEE)', { locale: zhTW })}
                           {entry.note && ` - ${entry.note}`}
                         </p>
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
-                      <span className="font-semibold text-gray-900">{entry.hours} 小時</span>
+                      <span className="font-semibold text-gray-900 dark:text-gray-100">{entry.hours} 小時</span>
                       <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                         <button
                           onClick={() => setEditingEntry(entry)}
-                          className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded"
+                          className="p-1.5 text-gray-400 dark:text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded"
                           title="編輯"
                         >
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -300,7 +308,7 @@ export function MyRecords() {
                         </button>
                         <button
                           onClick={() => setDeletingEntryId(entry.id)}
-                          className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded"
+                          className="p-1.5 text-gray-400 dark:text-gray-500 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded"
                           title="刪除"
                         >
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -319,7 +327,7 @@ export function MyRecords() {
 
       {entriesByWeek.length === 0 && (
         <Card className="text-center py-12">
-          <p className="text-gray-500">
+          <p className="text-gray-500 dark:text-gray-400">
             {selectedWeek === 'all' ? '尚無工時紀錄' : '此週無工時紀錄'}
           </p>
         </Card>

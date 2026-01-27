@@ -2,11 +2,13 @@ import { useMemo, useState } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar } from 'recharts';
 import { useTimeEntries } from '../context/TimeEntryContext';
 import { useProjects } from '../context/ProjectContext';
+import { useTheme } from '../context/ThemeContext';
 import { format, startOfWeek, subWeeks } from 'date-fns';
 
 export function Trends() {
   const { timeEntries } = useTimeEntries();
   const { projects } = useProjects();
+  const { effectiveTheme } = useTheme();
   const [selectedProject, setSelectedProject] = useState<string>('all');
   const [timeRange, setTimeRange] = useState<'1month' | '3months'>('1month');
 
@@ -145,14 +147,14 @@ export function Trends() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">趨勢分析</h1>
-          <p className="text-gray-500 mt-1">追蹤工時分配的變化趨勢</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">趨勢分析</h1>
+          <p className="text-gray-500 dark:text-gray-400 mt-1">追蹤工時分配的變化趨勢</p>
         </div>
         <div className="flex gap-3">
           <select
             value={timeRange}
             onChange={e => setTimeRange(e.target.value as '1month' | '3months')}
-            className="px-4 py-2 border border-gray-300 rounded-lg bg-white focus:outline-none"
+            className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none"
           >
             <option value="1month">近一個月</option>
             <option value="3months">近三個月</option>
@@ -160,7 +162,7 @@ export function Trends() {
           <select
             value={selectedProject}
             onChange={e => setSelectedProject(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-lg bg-white focus:outline-none"
+            className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none"
           >
             <option value="all">全部專案</option>
             {activeProjects.map(project => (
@@ -172,8 +174,8 @@ export function Trends() {
 
       {/* New Projects Alert */}
       {newProjects.length > 0 && (
-        <div className="p-4 bg-green-50 border border-green-200 rounded-xl">
-          <h3 className="font-medium text-green-900 mb-2">新增專案</h3>
+        <div className="p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl">
+          <h3 className="font-medium text-green-900 dark:text-green-100 mb-2">新增專案</h3>
           <div className="flex flex-wrap gap-2">
             {newProjects.map(p => (
               <span
@@ -189,8 +191,8 @@ export function Trends() {
       )}
 
       {/* Line Chart - Weekly Trends */}
-      <div className="bg-white p-6 rounded-xl border border-gray-200">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">週工時趨勢</h2>
+      <div className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700">
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">週工時趨勢</h2>
         {timeEntries.length > 0 ? (
           <div className="outline-none focus:outline-none [&_*]:outline-none [&_*]:focus:outline-none">
             <ResponsiveContainer width="100%" height={350}>
@@ -198,7 +200,20 @@ export function Trends() {
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="weekLabel" />
                 <YAxis />
-                <Tooltip />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: effectiveTheme === 'dark' ? 'rgba(31, 41, 55, 0.98)' : 'rgba(255, 255, 255, 0.98)',
+                    border: effectiveTheme === 'dark' ? '1px solid #374151' : '1px solid #e5e7eb',
+                    borderRadius: '8px',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+                    color: effectiveTheme === 'dark' ? '#f3f4f6' : '#111827'
+                  }}
+                  wrapperStyle={{
+                    outline: 'none',
+                    zIndex: 1000
+                  }}
+                  cursor={false}
+                />
                 <Legend />
                 {activeProjects.map(project => (
                   <Line
@@ -214,7 +229,7 @@ export function Trends() {
             </ResponsiveContainer>
           </div>
         ) : (
-          <div className="h-[350px] flex items-center justify-center text-gray-400">
+          <div className="h-[350px] flex items-center justify-center text-gray-400 dark:text-gray-500">
             尚無工時紀錄
           </div>
         )}
@@ -224,29 +239,29 @@ export function Trends() {
       {projectTrends.length > 0 && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {projectTrends.map(item => (
-            <div key={item.name} className="bg-white p-4 rounded-xl border border-gray-200">
+            <div key={item.name} className="bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-200 dark:border-gray-700">
               <div className="flex items-center gap-2 mb-2">
                 <span className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color }} />
-                <span className="font-medium text-gray-900 truncate">{item.name}</span>
+                <span className="font-medium text-gray-900 dark:text-gray-100 truncate">{item.name}</span>
               </div>
               <div className="flex items-center gap-2">
                 {item.trend === 'up' && (
-                  <span className="text-green-600 text-2xl">↑</span>
+                  <span className="text-green-600 dark:text-green-400 text-2xl">↑</span>
                 )}
                 {item.trend === 'down' && (
-                  <span className="text-red-600 text-2xl">↓</span>
+                  <span className="text-red-600 dark:text-red-400 text-2xl">↓</span>
                 )}
                 {item.trend === 'stable' && (
-                  <span className="text-gray-400 text-2xl">→</span>
+                  <span className="text-gray-400 dark:text-gray-500 text-2xl">→</span>
                 )}
                 <span className={`text-lg font-semibold ${
-                  item.trend === 'up' ? 'text-green-600' :
-                  item.trend === 'down' ? 'text-red-600' : 'text-gray-500'
+                  item.trend === 'up' ? 'text-green-600 dark:text-green-400' :
+                  item.trend === 'down' ? 'text-red-600 dark:text-red-400' : 'text-gray-500 dark:text-gray-400'
                 }`}>
                   {item.change > 0 ? '+' : ''}{item.change}%
                 </span>
               </div>
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                 相較前{timeRange === '1month' ? '2' : '3'}週平均
               </p>
             </div>
@@ -255,8 +270,8 @@ export function Trends() {
       )}
 
       {/* Total Hours Bar Chart */}
-      <div className="bg-white p-6 rounded-xl border border-gray-200">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">週總工時</h2>
+      <div className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700">
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">週總工時</h2>
         {timeEntries.length > 0 ? (
           <div className="outline-none focus:outline-none [&_*]:outline-none [&_*]:focus:outline-none">
             <ResponsiveContainer width="100%" height={250}>
@@ -264,13 +279,26 @@ export function Trends() {
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="weekLabel" />
                 <YAxis />
-                <Tooltip />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: effectiveTheme === 'dark' ? 'rgba(31, 41, 55, 0.98)' : 'rgba(255, 255, 255, 0.98)',
+                    border: effectiveTheme === 'dark' ? '1px solid #374151' : '1px solid #e5e7eb',
+                    borderRadius: '8px',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+                    color: effectiveTheme === 'dark' ? '#f3f4f6' : '#111827'
+                  }}
+                  wrapperStyle={{
+                    outline: 'none',
+                    zIndex: 1000
+                  }}
+                  cursor={false}
+                />
                 <Bar dataKey="total" fill="#7C9CBF" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
         ) : (
-          <div className="h-[250px] flex items-center justify-center text-gray-400">
+          <div className="h-[250px] flex items-center justify-center text-gray-400 dark:text-gray-500">
             尚無工時紀錄
           </div>
         )}
@@ -280,9 +308,9 @@ export function Trends() {
       {(projectTrends.filter(p => p.trend === 'up').length > 0 ||
         projectTrends.filter(p => p.trend === 'down').length > 0 ||
         newProjects.length > 0) && (
-        <div className="bg-blue-50 p-6 rounded-xl">
-          <h2 className="text-lg font-semibold text-blue-900 mb-4">趨勢洞察</h2>
-          <ul className="space-y-2 text-blue-800">
+        <div className="bg-blue-50 dark:bg-blue-900/20 p-6 rounded-xl border border-blue-100 dark:border-blue-800">
+          <h2 className="text-lg font-semibold text-blue-900 dark:text-blue-100 mb-4">趨勢洞察</h2>
+          <ul className="space-y-2 text-blue-800 dark:text-blue-200">
             {projectTrends.filter(p => p.trend === 'up').length > 0 && (
               <li>
                 • 工時增加的專案：{projectTrends.filter(p => p.trend === 'up').map(p => p.name).join('、')}
@@ -304,8 +332,8 @@ export function Trends() {
 
       {/* Empty state */}
       {timeEntries.length === 0 && (
-        <div className="bg-gray-50 p-6 rounded-xl text-center">
-          <p className="text-gray-500">開始填寫工時後，這裡會顯示您的趨勢分析</p>
+        <div className="bg-gray-50 dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700 text-center">
+          <p className="text-gray-500 dark:text-gray-400">開始填寫工時後，這裡會顯示您的趨勢分析</p>
         </div>
       )}
     </div>

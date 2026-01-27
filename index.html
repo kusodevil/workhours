@@ -26,6 +26,22 @@
     <meta property="twitter:title" content="WorkHours - 工時追蹤系統" />
     <meta property="twitter:description" content="專為 QA 團隊設計的工時追蹤系統，提供工時填寫、統計分析、趨勢圖表等完整功能" />
     <meta property="twitter:image" content="https://status-window.vercel.app/og-image.png?v=2" />
+
+    <!-- Dark Mode FOUC Prevention -->
+    <script>
+      (function() {
+        try {
+          const theme = localStorage.getItem('workhours-theme-preference') || 'system';
+          const getSystemTheme = () => window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+          const effectiveTheme = theme === 'system' ? getSystemTheme() : theme;
+          if (effectiveTheme === 'dark') {
+            document.documentElement.classList.add('dark');
+          }
+        } catch (e) {
+          // localStorage 可能不可用（例如隱私模式），忽略錯誤
+        }
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

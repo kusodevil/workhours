@@ -1,5 +1,6 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { ThemeToggle } from './ThemeToggle';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -31,13 +32,13 @@ export function Layout({ children }: LayoutProps) {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Header */}
-      <header className="bg-white shadow-sm border-b border-gray-200">
+      <header className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center gap-8">
-              <Link to="/" className="text-xl font-bold text-blue-600">
+              <Link to="/" className="text-xl font-bold text-blue-600 dark:text-blue-400">
                 WorkHours
               </Link>
               <nav className="hidden md:flex gap-1">
@@ -49,8 +50,8 @@ export function Layout({ children }: LayoutProps) {
                       to={item.path}
                       className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                         location.pathname === item.path
-                          ? 'bg-blue-50 text-blue-600'
-                          : 'text-gray-600 hover:bg-gray-100'
+                          ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400'
+                          : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
                       }`}
                     >
                       {item.label}
@@ -61,6 +62,7 @@ export function Layout({ children }: LayoutProps) {
             </div>
 
             <div className="flex items-center gap-4">
+              <ThemeToggle />
               {isAuthenticated ? (
                 <>
                   <Link
@@ -71,22 +73,22 @@ export function Layout({ children }: LayoutProps) {
                       <img
                         src={profile.avatar_url}
                         alt={profile?.username || ''}
-                        className="w-8 h-8 rounded-full bg-gray-200"
+                        className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700"
                       />
                     ) : (
-                      <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
-                        <span className="text-blue-600 text-sm font-medium">
+                      <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+                        <span className="text-blue-600 dark:text-blue-400 text-sm font-medium">
                           {(profile?.username || '使')[0].toUpperCase()}
                         </span>
                       </div>
                     )}
-                    <span className="text-sm font-medium text-gray-700">
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
                       {profile?.username || '使用者'}
                     </span>
                   </Link>
                   <button
                     onClick={handleLogout}
-                    className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900"
+                    className="px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100"
                   >
                     登出
                   </button>
@@ -95,13 +97,13 @@ export function Layout({ children }: LayoutProps) {
                 <>
                   <Link
                     to="/login"
-                    className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900"
+                    className="px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100"
                   >
                     登入
                   </Link>
                   <Link
                     to="/register"
-                    className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700"
+                    className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-700"
                   >
                     註冊
                   </Link>

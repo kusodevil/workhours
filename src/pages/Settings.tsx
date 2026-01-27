@@ -13,7 +13,7 @@ export function Settings() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   if (authLoading) {
-    return <div className="flex justify-center py-12">載入中...</div>;
+    return <div className="flex justify-center py-12 text-gray-900 dark:text-gray-100">載入中...</div>;
   }
 
   if (!isAuthenticated || !user) {
@@ -105,16 +105,16 @@ export function Settings() {
   return (
     <div className="max-w-2xl mx-auto">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">個人設定</h1>
-        <p className="text-gray-500 mt-1">管理您的個人資料</p>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">個人設定</h1>
+        <p className="text-gray-500 dark:text-gray-400 mt-1">管理您的個人資料</p>
       </div>
 
       {message && (
         <div
           className={`mb-6 p-4 rounded-lg ${
             message.type === 'success'
-              ? 'bg-green-50 border border-green-200 text-green-700'
-              : 'bg-red-50 border border-red-200 text-red-700'
+              ? 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-400'
+              : 'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400'
           }`}
         >
           {message.text}
@@ -122,8 +122,8 @@ export function Settings() {
       )}
 
       {/* Avatar Section */}
-      <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">頭像</h2>
+      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 mb-6">
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">頭像</h2>
         <div className="flex items-center gap-6">
           <div className="relative">
             {profile?.avatar_url ? (
@@ -133,8 +133,8 @@ export function Settings() {
                 className="w-24 h-24 rounded-full object-cover"
               />
             ) : (
-              <div className="w-24 h-24 rounded-full bg-blue-100 flex items-center justify-center">
-                <span className="text-3xl font-semibold text-blue-600">
+              <div className="w-24 h-24 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+                <span className="text-3xl font-semibold text-blue-600 dark:text-blue-400">
                   {profile?.username?.charAt(0).toUpperCase() || 'U'}
                 </span>
               </div>
@@ -156,7 +156,7 @@ export function Settings() {
             >
               {uploading ? '上傳中...' : '更換頭像'}
             </Button>
-            <p className="text-sm text-gray-500 mt-2">
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
               支援 JPG、PNG 格式，建議尺寸 500x500px
             </p>
           </div>
@@ -164,19 +164,19 @@ export function Settings() {
       </div>
 
       {/* Username Section */}
-      <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">使用者名稱</h2>
+      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 mb-6">
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">使用者名稱</h2>
         <form onSubmit={handleUsernameUpdate}>
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 使用者名稱
               </label>
               <input
                 type="text"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
                 placeholder="輸入使用者名稱"
                 required
               />
@@ -189,16 +189,16 @@ export function Settings() {
       </div>
 
       {/* Account Info */}
-      <div className="bg-white rounded-xl border border-gray-200 p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">帳號資訊</h2>
+      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">帳號資訊</h2>
         <div className="space-y-3">
           <div>
-            <p className="text-sm text-gray-500">Email</p>
-            <p className="text-gray-900">{user.email}</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400">Email</p>
+            <p className="text-gray-900 dark:text-gray-100">{user.email}</p>
           </div>
           <div>
-            <p className="text-sm text-gray-500">帳號建立時間</p>
-            <p className="text-gray-900">
+            <p className="text-sm text-gray-500 dark:text-gray-400">帳號建立時間</p>
+            <p className="text-gray-900 dark:text-gray-100">
               {new Date(user.created_at).toLocaleDateString('zh-TW', {
                 year: 'numeric',
                 month: 'long',
