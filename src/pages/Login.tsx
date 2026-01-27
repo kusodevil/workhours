@@ -19,7 +19,7 @@ export function Login() {
     if (result.error) {
       setError(result.error);
     } else {
-      navigate('/timesheet');
+      navigate('/');
     }
     setLoading(false);
   };
