@@ -1,0 +1,37 @@
+<svg width="1200" height="630" viewBox="0 0 1200 630" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="1200" height="630" fill="#2563eb"/>
+
+  <!-- Gradient Overlay -->
+  <defs>
+    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#3b82f6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1e40af;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#grad)"/>
+
+  <!-- Icon/Logo Circle -->
+  <circle cx="600" cy="240" r="80" fill="white" fill-opacity="0.2"/>
+  <circle cx="600" cy="240" r="60" fill="white" fill-opacity="0.3"/>
+
+  <!-- Clock Icon -->
+  <circle cx="600" cy="240" r="45" fill="none" stroke="white" stroke-width="4"/>
+  <line x1="600" y1="240" x2="600" y2="210" stroke="white" stroke-width="4" stroke-linecap="round"/>
+  <line x1="600" y1="240" x2="625" y2="250" stroke="white" stroke-width="4" stroke-linecap="round"/>
+
+  <!-- Title -->
+  <text x="600" y="380" font-family="Arial, sans-serif" font-size="72" font-weight="bold" fill="white" text-anchor="middle">
+    WorkHours
+  </text>
+
+  <!-- Subtitle -->
+  <text x="600" y="440" font-family="Arial, sans-serif" font-size="36" fill="white" fill-opacity="0.9" text-anchor="middle">
+    工時追蹤系統
+  </text>
+
+  <!-- Description -->
+  <text x="600" y="500" font-family="Arial, sans-serif" font-size="24" fill="white" fill-opacity="0.8" text-anchor="middle">
+    專為 QA 團隊設計 | 統計分析 | 趨勢圖表
+  </text>
+</svg>
