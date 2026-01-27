@@ -1,0 +1,313 @@
+import { useMemo, useState } from 'react';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar } from 'recharts';
+import { useTimeEntries } from '../context/TimeEntryContext';
+import { useProjects } from '../context/ProjectContext';
+import { format, startOfWeek, subWeeks } from 'date-fns';
+
+export function Trends() {
+  const { timeEntries } = useTimeEntries();
+  const { projects } = useProjects();
+  const [selectedProject, setSelectedProject] = useState<string>('all');
+  const [timeRange, setTimeRange] = useState<'1month' | '3months'>('1month');
+
+  const activeProjects = projects.filter(p => p.is_active);
+
+  // Determine number of weeks based on time range
+  const weeksToShow = timeRange === '1month' ? 4 : 12;
+
+  // Generate ALL trend data (not affected by project filter, only by time range)
+  const allTrendData = useMemo(() => {
+    const weeks: { weekLabel: string; weekStart: Date; [key: string]: number | string | Date }[] = [];
+    const today = new Date();
+
+    // Get the most recent Monday (start of this week)
+    const currentWeekStart = startOfWeek(today, { weekStartsOn: 1 });
+
+    // Generate weeks ending with current week
+    for (let i = weeksToShow - 1; i >= 0; i--) {
+      const weekStart = subWeeks(currentWeekStart, i);
+      weeks.push({
+        weekLabel: format(weekStart, 'M/d'),
+        weekStart,
+      });
+    }
+
+    // Calculate hours per project per week (ALL projects, no filter)
+    weeks.forEach(week => {
+      const weekEnd = new Date(week.weekStart);
+      weekEnd.setDate(week.weekStart.getDate() + 6);
+
+      const weekEntries = timeEntries.filter(e => {
+        const d = new Date(e.date);
+        return d >= week.weekStart && d <= weekEnd;
+      });
+
+      activeProjects.forEach(project => {
+        const projectHours = weekEntries
+          .filter(e => e.project_id === project.id)
+          .reduce((sum, e) => sum + e.hours, 0);
+        week[project.name] = projectHours;
+      });
+
+      week.total = weekEntries.reduce((sum, e) => sum + e.hours, 0);
+    });
+
+    return weeks;
+  }, [timeEntries, activeProjects, weeksToShow]);
+
+  // Generate filtered trend data (affected by project filter, for chart display)
+  const trendData = useMemo(() => {
+    if (selectedProject === 'all') {
+      return allTrendData;
+    }
+
+    const weeks: { weekLabel: string; weekStart: Date; [key: string]: number | string | Date }[] = [];
+    const today = new Date();
+
+    // Get the most recent Monday (start of this week)
+    const currentWeekStart = startOfWeek(today, { weekStartsOn: 1 });
+
+    // Generate weeks ending with current week
+    for (let i = weeksToShow - 1; i >= 0; i--) {
+      const weekStart = subWeeks(currentWeekStart, i);
+      weeks.push({
+        weekLabel: format(weekStart, 'M/d'),
+        weekStart,
+      });
+    }
+
+    // Calculate hours per project per week (filtered by selected project)
+    weeks.forEach(week => {
+      const weekEnd = new Date(week.weekStart);
+      weekEnd.setDate(week.weekStart.getDate() + 6);
+
+      const weekEntries = timeEntries.filter(e => {
+        if (selectedProject !== 'all' && e.project_id !== selectedProject) return false;
+        const d = new Date(e.date);
+        return d >= week.weekStart && d <= weekEnd;
+      });
+
+      activeProjects.forEach(project => {
+        const projectHours = weekEntries
+          .filter(e => e.project_id === project.id)
+          .reduce((sum, e) => sum + e.hours, 0);
+        week[project.name] = projectHours;
+      });
+
+      week.total = weekEntries.reduce((sum, e) => sum + e.hours, 0);
+    });
+
+    return weeks;
+  }, [selectedProject, timeEntries, activeProjects, weeksToShow, allTrendData]);
+
+  // Detect new projects (appeared in recent weeks but not before) - use allTrendData
+  const newProjects = useMemo(() => {
+    const recentWeeksCount = timeRange === '1month' ? 2 : 3;
+    const recentWeeks = allTrendData.slice(-recentWeeksCount);
+    const olderWeeks = allTrendData.slice(0, -recentWeeksCount);
+
+    return activeProjects.filter(p => {
+      const hasRecentActivity = recentWeeks.some(w => (w[p.name] as number) > 0);
+      const hadOldActivity = olderWeeks.some(w => (w[p.name] as number) > 0);
+      return hasRecentActivity && !hadOldActivity;
+    });
+  }, [allTrendData, activeProjects, timeRange]);
+
+  // Calculate project growth/decline - use allTrendData
+  const projectTrends = useMemo(() => {
+    const trends: { name: string; color: string; trend: 'up' | 'down' | 'stable'; change: number }[] = [];
+
+    // Adjust comparison window based on time range
+    const recentWeeksCount = timeRange === '1month' ? 2 : 3;
+    const compareWeeksCount = timeRange === '1month' ? 2 : 6;
+
+    activeProjects.forEach(project => {
+      const recentWeeks = allTrendData.slice(-recentWeeksCount);
+      const olderWeeks = allTrendData.slice(-compareWeeksCount, -recentWeeksCount);
+
+      const recentAvg = recentWeeks.reduce((sum, w) => sum + ((w[project.name] as number) || 0), 0) / recentWeeksCount;
+      const olderAvg = olderWeeks.reduce((sum, w) => sum + ((w[project.name] as number) || 0), 0) / Math.max(olderWeeks.length, 1);
+
+      const change = olderAvg > 0 ? ((recentAvg - olderAvg) / olderAvg) * 100 : (recentAvg > 0 ? 100 : 0);
+
+      trends.push({
+        name: project.name,
+        color: project.color,
+        trend: change > 10 ? 'up' : change < -10 ? 'down' : 'stable',
+        change: Math.round(change),
+      });
+    });
+
+    return trends.sort((a, b) => b.change - a.change);
+  }, [allTrendData, activeProjects, timeRange]);
+
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">趨勢分析</h1>
+          <p className="text-gray-500 mt-1">追蹤工時分配的變化趨勢</p>
+        </div>
+        <div className="flex gap-3">
+          <select
+            value={timeRange}
+            onChange={e => setTimeRange(e.target.value as '1month' | '3months')}
+            className="px-4 py-2 border border-gray-300 rounded-lg bg-white focus:outline-none"
+          >
+            <option value="1month">近一個月</option>
+            <option value="3months">近三個月</option>
+          </select>
+          <select
+            value={selectedProject}
+            onChange={e => setSelectedProject(e.target.value)}
+            className="px-4 py-2 border border-gray-300 rounded-lg bg-white focus:outline-none"
+          >
+            <option value="all">全部專案</option>
+            {activeProjects.map(project => (
+              <option key={project.id} value={project.id}>{project.name}</option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      {/* New Projects Alert */}
+      {newProjects.length > 0 && (
+        <div className="p-4 bg-green-50 border border-green-200 rounded-xl">
+          <h3 className="font-medium text-green-900 mb-2">新增專案</h3>
+          <div className="flex flex-wrap gap-2">
+            {newProjects.map(p => (
+              <span
+                key={p.id}
+                className="px-3 py-1 rounded-full text-sm font-medium text-white"
+                style={{ backgroundColor: p.color }}
+              >
+                {p.name}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Line Chart - Weekly Trends */}
+      <div className="bg-white p-6 rounded-xl border border-gray-200">
+        <h2 className="text-lg font-semibold text-gray-900 mb-4">週工時趨勢</h2>
+        {timeEntries.length > 0 ? (
+          <div className="outline-none focus:outline-none [&_*]:outline-none [&_*]:focus:outline-none">
+            <ResponsiveContainer width="100%" height={350}>
+              <LineChart data={trendData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="weekLabel" />
+                <YAxis />
+                <Tooltip />
+                <Legend />
+                {activeProjects.map(project => (
+                  <Line
+                    key={project.id}
+                    type="monotone"
+                    dataKey={project.name}
+                    stroke={project.color}
+                    strokeWidth={2}
+                    dot={{ fill: project.color }}
+                  />
+                ))}
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        ) : (
+          <div className="h-[350px] flex items-center justify-center text-gray-400">
+            尚無工時紀錄
+          </div>
+        )}
+      </div>
+
+      {/* Project Trends Cards */}
+      {projectTrends.length > 0 && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {projectTrends.map(item => (
+            <div key={item.name} className="bg-white p-4 rounded-xl border border-gray-200">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color }} />
+                <span className="font-medium text-gray-900 truncate">{item.name}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                {item.trend === 'up' && (
+                  <span className="text-green-600 text-2xl">↑</span>
+                )}
+                {item.trend === 'down' && (
+                  <span className="text-red-600 text-2xl">↓</span>
+                )}
+                {item.trend === 'stable' && (
+                  <span className="text-gray-400 text-2xl">→</span>
+                )}
+                <span className={`text-lg font-semibold ${
+                  item.trend === 'up' ? 'text-green-600' :
+                  item.trend === 'down' ? 'text-red-600' : 'text-gray-500'
+                }`}>
+                  {item.change > 0 ? '+' : ''}{item.change}%
+                </span>
+              </div>
+              <p className="text-xs text-gray-500 mt-1">
+                相較前{timeRange === '1month' ? '2' : '3'}週平均
+              </p>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Total Hours Bar Chart */}
+      <div className="bg-white p-6 rounded-xl border border-gray-200">
+        <h2 className="text-lg font-semibold text-gray-900 mb-4">週總工時</h2>
+        {timeEntries.length > 0 ? (
+          <div className="outline-none focus:outline-none [&_*]:outline-none [&_*]:focus:outline-none">
+            <ResponsiveContainer width="100%" height={250}>
+              <BarChart data={trendData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="weekLabel" />
+                <YAxis />
+                <Tooltip />
+                <Bar dataKey="total" fill="#7C9CBF" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        ) : (
+          <div className="h-[250px] flex items-center justify-center text-gray-400">
+            尚無工時紀錄
+          </div>
+        )}
+      </div>
+
+      {/* Insights */}
+      {(projectTrends.filter(p => p.trend === 'up').length > 0 ||
+        projectTrends.filter(p => p.trend === 'down').length > 0 ||
+        newProjects.length > 0) && (
+        <div className="bg-blue-50 p-6 rounded-xl">
+          <h2 className="text-lg font-semibold text-blue-900 mb-4">趨勢洞察</h2>
+          <ul className="space-y-2 text-blue-800">
+            {projectTrends.filter(p => p.trend === 'up').length > 0 && (
+              <li>
+                • 工時增加的專案：{projectTrends.filter(p => p.trend === 'up').map(p => p.name).join('、')}
+              </li>
+            )}
+            {projectTrends.filter(p => p.trend === 'down').length > 0 && (
+              <li>
+                • 工時減少的專案：{projectTrends.filter(p => p.trend === 'down').map(p => p.name).join('、')}
+              </li>
+            )}
+            {newProjects.length > 0 && (
+              <li>
+                • 近期新加入：{newProjects.map(p => p.name).join('、')}
+              </li>
+            )}
+          </ul>
+        </div>
+      )}
+
+      {/* Empty state */}
+      {timeEntries.length === 0 && (
+        <div className="bg-gray-50 p-6 rounded-xl text-center">
+          <p className="text-gray-500">開始填寫工時後，這裡會顯示您的趨勢分析</p>
+        </div>
+      )}
+    </div>
+  );
+}
