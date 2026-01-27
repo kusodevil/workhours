@@ -9,6 +9,7 @@ interface ProjectContextType {
   isLoading: boolean;
   addProject: (name: string, color: string, description?: string) => Promise<{ error: string | null }>;
   updateProject: (id: string, updates: Partial<Pick<Project, 'name' | 'color' | 'description' | 'is_active'>>) => Promise<{ error: string | null }>;
+  deleteProject: (id: string) => Promise<{ error: string | null }>;
   getProjectById: (id: string) => Project | undefined;
   refreshProjects: () => Promise<void>;
 }
@@ -98,6 +99,31 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
     return { error: null };
   };
 
+  const deleteProject = async (id: string): Promise<{ error: string | null }> => {
+    // First, delete all time entries associated with this project
+    const { error: entriesError } = await supabase
+      .from('time_entries')
+      .delete()
+      .eq('project_id', id);
+
+    if (entriesError) {
+      return { error: '刪除專案時數失敗：' + entriesError.message };
+    }
+
+    // Then delete the project
+    const { error: projectError } = await supabase
+      .from('projects')
+      .delete()
+      .eq('id', id);
+
+    if (projectError) {
+      return { error: '刪除專案失敗：' + projectError.message };
+    }
+
+    setProjects(prev => prev.filter(p => p.id !== id));
+    return { error: null };
+  };
+
   const getProjectById = (id: string) => {
     return projects.find(p => p.id === id);
   };
@@ -113,6 +139,7 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
         isLoading,
         addProject,
         updateProject,
+        deleteProject,
         getProjectById,
         refreshProjects,
       }}

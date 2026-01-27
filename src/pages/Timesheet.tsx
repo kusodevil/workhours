@@ -16,7 +16,7 @@ interface TimeEntryForm {
 export function Timesheet() {
   const { isAuthenticated, isLoading: authLoading } = useAuth();
   const { addEntry } = useTimeEntries();
-  const { projects, addProject, isLoading: projectsLoading } = useProjects();
+  const { projects, addProject, deleteProject, isLoading: projectsLoading } = useProjects();
   const [entries, setEntries] = useState<TimeEntryForm[]>([
     { projectId: '', hours: 0, date: new Date().toISOString().split('T')[0], note: '' },
   ]);
@@ -29,6 +29,11 @@ export function Timesheet() {
   const [newProjectName, setNewProjectName] = useState('');
   const [newProjectColor, setNewProjectColor] = useState(PROJECT_COLORS[0]);
   const [creatingProject, setCreatingProject] = useState(false);
+
+  // Manage projects modal state
+  const [showManageProjects, setShowManageProjects] = useState(false);
+  const [deletingProjectId, setDeletingProjectId] = useState<string | null>(null);
+  const [projectToDelete, setProjectToDelete] = useState<string | null>(null);
 
   if (authLoading) {
     return <div className="flex justify-center py-12">載入中...</div>;
@@ -99,6 +104,18 @@ export function Timesheet() {
     }
   };
 
+  const handleDeleteProject = async (projectId: string) => {
+    setDeletingProjectId(projectId);
+    const result = await deleteProject(projectId);
+    setDeletingProjectId(null);
+
+    if (result.error) {
+      setError(result.error);
+    } else {
+      setProjectToDelete(null);
+    }
+  };
+
   const totalHours = entries.reduce((sum, e) => sum + (e.hours || 0), 0);
 
   return (
@@ -153,6 +170,14 @@ export function Timesheet() {
                         title="新增專案"
                       >
                         +
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setShowManageProjects(true)}
+                        className="px-3 py-2 border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-50"
+                        title="管理專案"
+                      >
+                        ⚙️
                       </button>
                     </div>
                   </div>
@@ -302,6 +327,90 @@ export function Timesheet() {
           </div>
         </div>
       </Modal>
+
+      {/* Manage Projects Modal */}
+      <Modal isOpen={showManageProjects} onClose={() => setShowManageProjects(false)} title="管理專案">
+        <div className="space-y-3">
+          {projects.length === 0 ? (
+            <p className="text-gray-500 text-center py-4">尚無專案</p>
+          ) : (
+            projects.map(project => (
+              <div
+                key={project.id}
+                className="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50"
+              >
+                <div className="flex items-center gap-3">
+                  <div
+                    className="w-4 h-4 rounded-full"
+                    style={{ backgroundColor: project.color }}
+                  />
+                  <span className="font-medium text-gray-900">{project.name}</span>
+                  {!project.is_active && (
+                    <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                      已停用
+                    </span>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setProjectToDelete(project.id)}
+                  disabled={deletingProjectId === project.id}
+                  className="text-red-600 hover:text-red-700 disabled:opacity-50"
+                  title="刪除專案"
+                >
+                  {deletingProjectId === project.id ? '刪除中...' : '🗑️'}
+                </button>
+              </div>
+            ))
+          )}
+          <div className="pt-4">
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => setShowManageProjects(false)}
+              className="w-full"
+            >
+              關閉
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Delete Confirmation Modal */}
+      {projectToDelete && (
+        <Modal
+          isOpen={true}
+          onClose={() => setProjectToDelete(null)}
+          title="確認刪除"
+        >
+          <div className="space-y-4">
+            <p className="text-gray-700">
+              確定要刪除「<span className="font-semibold">{projects.find(p => p.id === projectToDelete)?.name}</span>」嗎？
+            </p>
+            <p className="text-sm text-red-600">
+              ⚠️ 此操作將同時刪除該專案的所有工時紀錄，且無法復原！
+            </p>
+            <div className="flex gap-3 pt-4">
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => setProjectToDelete(null)}
+                className="flex-1"
+              >
+                取消
+              </Button>
+              <Button
+                type="button"
+                onClick={() => handleDeleteProject(projectToDelete)}
+                disabled={deletingProjectId !== null}
+                className="flex-1 bg-red-600 hover:bg-red-700"
+              >
+                {deletingProjectId ? '刪除中...' : '確認刪除'}
+              </Button>
+            </div>
+          </div>
+        </Modal>
+      )}
     </div>
   );
 }
