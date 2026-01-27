@@ -41,8 +41,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let isMounted = true;
 
-    // Listen for auth changes - this is the primary method
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    // FIRST: Check for existing session on mount
+    supabase.auth.getSession().then(({ data: { session } }) => {
       if (!isMounted) return;
 
       setUser(session?.user ?? null);
@@ -56,6 +56,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         });
       } else {
         setProfile(null);
+      }
+    });
+
+    // THEN: Listen for future auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!isMounted) return;
+
+      setUser(session?.user ?? null);
+
+      if (session?.user) {
+        fetchProfile(session.user.id).then(profileData => {
+          if (isMounted) {
+            setProfile(profileData);
+          }
+        });
+      } else {
+        setProfile(null);
+        setIsLoading(false);
       }
     });
 
