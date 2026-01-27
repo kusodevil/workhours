@@ -90,6 +90,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         data: {
           username,
         },
+        emailRedirectTo: undefined,
       },
     });
 

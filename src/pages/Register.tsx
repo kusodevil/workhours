@@ -39,7 +39,7 @@ export function Register() {
         {success ? (
           <div className="text-center py-4">
             <div className="p-4 bg-green-50 border border-green-200 rounded-lg text-green-700 mb-4">
-              註冊成功！請檢查您的 Email 完成驗證。
+              註冊成功！現在可以登入了。
             </div>
             <Link to="/login" className="text-blue-600 hover:underline">
               前往登入
