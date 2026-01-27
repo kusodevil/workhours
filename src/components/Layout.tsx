@@ -16,10 +16,10 @@ export function Layout({ children }: LayoutProps) {
   };
 
   const navItems = [
-    { path: '/', label: '總覽', public: true },
+    { path: '/', label: '總覽', public: false },
     { path: '/timesheet', label: '填寫工時', public: false },
     { path: '/my-records', label: '我的紀錄', public: false },
-    { path: '/trends', label: '趨勢分析', public: true },
+    { path: '/trends', label: '趨勢分析', public: false },
   ];
 
   return (
