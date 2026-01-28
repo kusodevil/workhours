@@ -146,7 +146,7 @@ export function AdminUsers() {
       if (insertError) {
         setToast({ message: `新增失敗：${insertError.message}`, type: 'error' });
       } else {
-        setToast({ message: `成功為 ${addingForUser.name} 新增 ${entries.length} 筆工時記錄`, type: 'success' });
+        setToast({ message: `成功為 ${addingForUser.name} 新增工時記錄`, type: 'success' });
 
         // 刷新時數記錄（不重新載入頁面，保持當前展開狀態）
         await refreshEntries();
