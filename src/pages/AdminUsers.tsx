@@ -11,6 +11,7 @@ import { Button } from '../components/ui';
 import { ConfirmModal } from '../components/ui';
 import { TimeEntryEditModal } from '../components/TimeEntryEditModal';
 import { AdminAddTimeEntryModal } from '../components/AdminAddTimeEntryModal';
+import { Toast } from '../components/Toast';
 
 export function AdminUsers() {
   const { profile, isAuthenticated, isAdmin, isLoading: authLoading } = useAuth();
@@ -20,8 +21,7 @@ export function AdminUsers() {
   const [users, setUsers] = useState<Profile[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [updatingUserId, setUpdatingUserId] = useState<string | null>(null);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
   // 工時記錄相關狀態
   const [expandedUserId, setExpandedUserId] = useState<string | null>(null);
@@ -45,7 +45,7 @@ export function AdminUsers() {
 
     if (error) {
       console.error('Error fetching users:', error);
-      setError('載入用戶列表失敗');
+      setToast({ message: '載入用戶列表失敗', type: 'error' });
     } else {
       setUsers(data as Profile[]);
     }
@@ -53,8 +53,6 @@ export function AdminUsers() {
   };
 
   const toggleAdmin = async (userId: string, currentIsAdmin: boolean) => {
-    setError('');
-    setSuccess('');
     setUpdatingUserId(userId);
 
     const { error: updateError } = await supabase
@@ -63,14 +61,13 @@ export function AdminUsers() {
       .eq('id', userId);
 
     if (updateError) {
-      setError(`更新失敗：${updateError.message}`);
+      setToast({ message: `更新失敗：${updateError.message}`, type: 'error' });
     } else {
-      setSuccess('管理者權限已更新');
+      setToast({ message: '權限已更新', type: 'success' });
       // Update local state
       setUsers(users.map(u =>
         u.id === userId ? { ...u, is_admin: !currentIsAdmin } : u
       ));
-      setTimeout(() => setSuccess(''), 3000);
     }
 
     setUpdatingUserId(null);
@@ -111,11 +108,9 @@ export function AdminUsers() {
   const handleEditEntry = async (id: string, updates: Partial<Pick<TimeEntry, 'project_id' | 'hours' | 'date' | 'note'>>) => {
     const result = await updateEntry(id, updates);
     if (!result.error) {
-      setSuccess('工時記錄已更新');
-      setTimeout(() => setSuccess(''), 3000);
+      setToast({ message: '工時記錄已更新', type: 'success' });
     } else {
-      setError(result.error);
-      setTimeout(() => setError(''), 3000);
+      setToast({ message: `更新失敗：${result.error}`, type: 'error' });
     }
   };
 
@@ -124,11 +119,9 @@ export function AdminUsers() {
     if (deletingEntryId) {
       const result = await deleteEntry(deletingEntryId);
       if (!result.error) {
-        setSuccess('工時記錄已刪除');
-        setTimeout(() => setSuccess(''), 3000);
+        setToast({ message: '工時記錄已刪除', type: 'success' });
       } else {
-        setError(result.error);
-        setTimeout(() => setError(''), 3000);
+        setToast({ message: `刪除失敗：${result.error}`, type: 'error' });
       }
       setDeletingEntryId(null);
     }
@@ -151,18 +144,15 @@ export function AdminUsers() {
         .insert(entriesWithUser);
 
       if (insertError) {
-        setError(`新增失敗：${insertError.message}`);
-        setTimeout(() => setError(''), 3000);
+        setToast({ message: `新增失敗：${insertError.message}`, type: 'error' });
       } else {
-        setSuccess(`成功為 ${addingForUser.name} 新增 ${entries.length} 筆工時記錄`);
-        setTimeout(() => setSuccess(''), 3000);
+        setToast({ message: `成功為 ${addingForUser.name} 新增 ${entries.length} 筆工時記錄`, type: 'success' });
 
         // 刷新時數記錄（不重新載入頁面，保持當前展開狀態）
         await refreshEntries();
       }
     } catch (err) {
-      setError('新增工時記錄時發生錯誤');
-      setTimeout(() => setError(''), 3000);
+      setToast({ message: '新增工時記錄時發生錯誤', type: 'error' });
     }
   };
 
@@ -193,16 +183,12 @@ export function AdminUsers() {
         <p className="text-gray-500 dark:text-gray-400 mt-1">管理系統用戶和管理者權限</p>
       </div>
 
-      {error && (
-        <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-red-700 dark:text-red-400">
-          {error}
-        </div>
-      )}
-
-      {success && (
-        <div className="mb-6 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg text-green-700 dark:text-green-400">
-          {success}
-        </div>
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
       )}
 
       <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">

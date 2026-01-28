@@ -18,7 +18,8 @@ export function AdminAddTimeEntryModal({ isOpen, onClose, onSubmit, projects, us
   const [selectedDays, setSelectedDays] = useState<string[]>([]);
   const [note, setNote] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [validationError, setValidationError] = useState<string>('');
+  const [projectError, setProjectError] = useState<string>('');
+  const [dateError, setDateError] = useState<string>('');
 
   // 生成本週所有日期
   const thisWeek = eachDayOfInterval({
@@ -39,7 +40,7 @@ export function AdminAddTimeEntryModal({ isOpen, onClose, onSubmit, projects, us
         ? prev.filter(d => d !== dateStr)
         : [...prev, dateStr]
     );
-    setValidationError('');
+    setDateError('');
   };
 
   const selectWeekdays = () => {
@@ -50,7 +51,7 @@ export function AdminAddTimeEntryModal({ isOpen, onClose, onSubmit, projects, us
       })
       .map(day => day.dateStr);
     setSelectedDays(weekdayDates);
-    setValidationError('');
+    setDateError('');
   };
 
   const selectWeekend = () => {
@@ -61,12 +62,12 @@ export function AdminAddTimeEntryModal({ isOpen, onClose, onSubmit, projects, us
       })
       .map(day => day.dateStr);
     setSelectedDays(weekendDates);
-    setValidationError('');
+    setDateError('');
   };
 
   const selectAll = () => {
     setSelectedDays(weekDays.map(day => day.dateStr));
-    setValidationError('');
+    setDateError('');
   };
 
   const clearAll = () => {
@@ -76,18 +77,27 @@ export function AdminAddTimeEntryModal({ isOpen, onClose, onSubmit, projects, us
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    // 清除之前的錯誤
+    setProjectError('');
+    setDateError('');
+
     // 驗證必填欄位
+    let hasError = false;
+
     if (!projectId) {
-      setValidationError('請選擇專案');
-      return;
+      setProjectError('請選擇專案');
+      hasError = true;
     }
 
     if (selectedDays.length === 0) {
-      setValidationError('請至少選擇一天');
+      setDateError('請至少選擇一天');
+      hasError = true;
+    }
+
+    if (hasError) {
       return;
     }
 
-    setValidationError('');
     setIsSubmitting(true);
 
     const entries = selectedDays.map(dateStr => ({
@@ -104,7 +114,8 @@ export function AdminAddTimeEntryModal({ isOpen, onClose, onSubmit, projects, us
     setHours(8);
     setSelectedDays([]);
     setNote('');
-    setValidationError('');
+    setProjectError('');
+    setDateError('');
     setIsSubmitting(false);
     onClose();
   };
@@ -114,13 +125,6 @@ export function AdminAddTimeEntryModal({ isOpen, onClose, onSubmit, projects, us
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={`為 ${userName} 新增工時`} size="lg">
       <form onSubmit={handleSubmit} className="space-y-4">
-        {/* 錯誤訊息 */}
-        {validationError && (
-          <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-            <p className="text-sm text-red-600 dark:text-red-400">{validationError}</p>
-          </div>
-        )}
-
         {/* 專案選擇 */}
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -130,14 +134,13 @@ export function AdminAddTimeEntryModal({ isOpen, onClose, onSubmit, projects, us
             value={projectId}
             onChange={e => {
               setProjectId(e.target.value);
-              setValidationError('');
+              setProjectError('');
             }}
             className={`w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 ${
-              validationError && !projectId
+              projectError
                 ? 'border-red-500 dark:border-red-400 focus:ring-red-500 dark:focus:ring-red-400'
                 : 'border-gray-300 dark:border-gray-600 focus:ring-blue-500 dark:focus:ring-blue-400'
             }`}
-            required
           >
             <option value="">請選擇專案</option>
             {activeProjects.map(project => (
@@ -146,6 +149,14 @@ export function AdminAddTimeEntryModal({ isOpen, onClose, onSubmit, projects, us
               </option>
             ))}
           </select>
+          {projectError && (
+            <p className="mt-1 text-sm text-red-600 dark:text-red-400 flex items-center gap-1">
+              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+              </svg>
+              {projectError}
+            </p>
+          )}
         </div>
 
         {/* 時數輸入 */}
@@ -220,9 +231,19 @@ export function AdminAddTimeEntryModal({ isOpen, onClose, onSubmit, projects, us
               </button>
             ))}
           </div>
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-            已選擇 {selectedDays.length} 天
-          </p>
+          <div className="flex items-center justify-between mt-2">
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              已選擇 {selectedDays.length} 天
+            </p>
+            {dateError && (
+              <p className="text-sm text-red-600 dark:text-red-400 flex items-center gap-1">
+                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                </svg>
+                {dateError}
+              </p>
+            )}
+          </div>
         </div>
 
         {/* 備註 */}
