@@ -112,9 +112,9 @@ serve(async (req) => {
     }
 
     // 使用 Service Role Key 建立 Supabase Admin client
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    const supabaseServiceKey = Deno.env.get('SERVICE_ROLE_KEY');
     if (!supabaseServiceKey) {
-      console.error('[admin-create-user] SUPABASE_SERVICE_ROLE_KEY not configured');
+      console.error('[admin-create-user] SERVICE_ROLE_KEY not configured');
       return new Response(
         JSON.stringify({ error: '服務配置錯誤' }),
         {
