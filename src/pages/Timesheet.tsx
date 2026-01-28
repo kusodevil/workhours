@@ -297,7 +297,7 @@ export function Timesheet() {
                       type="date"
                       value={entry.date}
                       onChange={e => updateFormEntry(index, 'date', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 dark:[color-scheme:dark]"
                       required
                     />
                   </div>
