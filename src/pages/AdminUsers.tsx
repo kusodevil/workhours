@@ -11,7 +11,9 @@ import { Button } from '../components/ui';
 import { ConfirmModal } from '../components/ui';
 import { TimeEntryEditModal } from '../components/TimeEntryEditModal';
 import { AdminAddTimeEntryModal } from '../components/AdminAddTimeEntryModal';
+import { AdminCreateUserModal } from '../components/AdminCreateUserModal';
 import { Toast } from '../components/Toast';
+import { invokeEdgeFunction } from '../lib/edge-functions';
 
 export function AdminUsers() {
   const { profile, isAuthenticated, isAdmin, isLoading: authLoading } = useAuth();
@@ -29,6 +31,9 @@ export function AdminUsers() {
   const [editingEntry, setEditingEntry] = useState<TimeEntry | null>(null);
   const [deletingEntryId, setDeletingEntryId] = useState<string | null>(null);
   const [addingForUser, setAddingForUser] = useState<{ id: string; name: string } | null>(null);
+
+  // 新增使用者相關狀態
+  const [showCreateModal, setShowCreateModal] = useState(false);
 
   useEffect(() => {
     if (isAdmin) {
@@ -156,6 +161,23 @@ export function AdminUsers() {
     }
   };
 
+  // 建立新使用者
+  const handleCreateUser = async (username: string, password: string) => {
+    const { error } = await invokeEdgeFunction('admin-create-user', {
+      username,
+      password,
+    });
+
+    if (error) {
+      throw new Error(error);
+    }
+
+    setToast({ message: `成功建立使用者 ${username}`, type: 'success' });
+
+    // 重新載入用戶列表
+    await fetchUsers();
+  };
+
   // 等待認證狀態載入
   if (authLoading) {
     return <div className="flex justify-center py-12 text-gray-900 dark:text-gray-100">載入中...</div>;
@@ -178,9 +200,17 @@ export function AdminUsers() {
 
   return (
     <div className="max-w-4xl mx-auto">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">管理帳號</h1>
-        <p className="text-gray-500 dark:text-gray-400 mt-1">管理系統用戶和管理者權限</p>
+      <div className="mb-6 flex justify-between items-start">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">管理帳號</h1>
+          <p className="text-gray-500 dark:text-gray-400 mt-1">管理系統用戶和管理者權限</p>
+        </div>
+        <button
+          onClick={() => setShowCreateModal(true)}
+          className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
+        >
+          + 新增使用者
+        </button>
       </div>
 
       {toast && (
@@ -447,6 +477,13 @@ export function AdminUsers() {
           userName={addingForUser.name}
         />
       )}
+
+      {/* 新增使用者 Modal */}
+      <AdminCreateUserModal
+        isOpen={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        onSubmit={handleCreateUser}
+      />
     </div>
   );
 }

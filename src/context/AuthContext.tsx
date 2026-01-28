@@ -83,7 +83,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  const login = async (email: string, password: string): Promise<{ error: string | null }> => {
+  const login = async (emailOrUsername: string, password: string): Promise<{ error: string | null }> => {
+    let email = emailOrUsername;
+
+    // 如果輸入的不是 email 格式（不包含 @），假設是 username
+    if (!emailOrUsername.includes('@')) {
+      // 查詢 profiles 表找到對應的 email
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('email')
+        .eq('username', emailOrUsername)
+        .maybeSingle();
+
+      if (profileError || !profile) {
+        return { error: '找不到此使用者' };
+      }
+
+      email = profile.email;
+    }
+
     const { error } = await supabase.auth.signInWithPassword({
       email,
       password,

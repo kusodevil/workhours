@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 export function Login() {
-  const [email, setEmail] = useState('');
+  const [emailOrUsername, setEmailOrUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -15,7 +15,7 @@ export function Login() {
     setError('');
     setLoading(true);
 
-    const result = await login(email, password);
+    const result = await login(emailOrUsername, password);
     if (result.error) {
       setError(result.error);
     } else {
@@ -38,14 +38,14 @@ export function Login() {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Email
+              使用者名稱 或 Email
             </label>
             <input
-              type="email"
-              value={email}
-              onChange={e => setEmail(e.target.value)}
+              type="text"
+              value={emailOrUsername}
+              onChange={e => setEmailOrUsername(e.target.value)}
               className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
-              placeholder="your@email.com"
+              placeholder="輸入使用者名稱或 Email"
               required
             />
           </div>
