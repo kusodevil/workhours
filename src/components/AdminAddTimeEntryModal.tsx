@@ -50,6 +50,7 @@ export function AdminAddTimeEntryModal({ isOpen, onClose, onSubmit, projects, us
       })
       .map(day => day.dateStr);
     setSelectedDays(weekdayDates);
+    setValidationError('');
   };
 
   const selectWeekend = () => {
@@ -60,10 +61,12 @@ export function AdminAddTimeEntryModal({ isOpen, onClose, onSubmit, projects, us
       })
       .map(day => day.dateStr);
     setSelectedDays(weekendDates);
+    setValidationError('');
   };
 
   const selectAll = () => {
     setSelectedDays(weekDays.map(day => day.dateStr));
+    setValidationError('');
   };
 
   const clearAll = () => {
@@ -107,7 +110,6 @@ export function AdminAddTimeEntryModal({ isOpen, onClose, onSubmit, projects, us
   };
 
   const activeProjects = projects.filter(p => p.is_active);
-  const canSubmit = projectId && selectedDays.length > 0 && !isSubmitting;
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={`為 ${userName} 新增工時`} size="lg">
@@ -250,7 +252,7 @@ export function AdminAddTimeEntryModal({ isOpen, onClose, onSubmit, projects, us
           </Button>
           <Button
             type="submit"
-            disabled={!canSubmit}
+            disabled={isSubmitting}
             className="flex-1"
           >
             {isSubmitting ? '新增中...' : `新增 ${selectedDays.length} 筆工時`}
