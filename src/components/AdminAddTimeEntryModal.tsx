@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { format, eachDayOfInterval, startOfWeek, endOfWeek } from 'date-fns';
+import { useState, useMemo } from 'react';
+import { format, eachDayOfInterval, startOfWeek, endOfWeek, subWeeks, startOfMonth, endOfMonth } from 'date-fns';
 import { zhTW } from 'date-fns/locale';
 import { Modal, Button } from './ui';
 import type { Project } from '../types/database';
@@ -15,63 +15,60 @@ interface AdminAddTimeEntryModalProps {
 export function AdminAddTimeEntryModal({ isOpen, onClose, onSubmit, projects, userName }: AdminAddTimeEntryModalProps) {
   const [projectId, setProjectId] = useState('');
   const [hours, setHours] = useState(8);
-  const [selectedDays, setSelectedDays] = useState<string[]>([]);
+  const [startDate, setStartDate] = useState(format(new Date(), 'yyyy-MM-dd'));
+  const [endDate, setEndDate] = useState(format(new Date(), 'yyyy-MM-dd'));
+  const [dateFilter, setDateFilter] = useState<'all' | 'weekdays' | 'weekends'>('all');
   const [note, setNote] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [projectError, setProjectError] = useState<string>('');
   const [dateError, setDateError] = useState<string>('');
 
-  // 生成本週所有日期
-  const thisWeek = eachDayOfInterval({
-    start: startOfWeek(new Date(), { weekStartsOn: 1 }),
-    end: endOfWeek(new Date(), { weekStartsOn: 1 })
-  });
+  // 根據開始和結束日期計算所有日期
+  const allDates = useMemo(() => {
+    if (!startDate || !endDate) return [];
 
-  const weekDays = thisWeek.map(day => ({
-    date: day,
-    dateStr: format(day, 'yyyy-MM-dd'),
-    dayName: format(day, 'EEE', { locale: zhTW }),
-    dayLabel: format(day, 'M/d')
-  }));
+    const start = new Date(startDate);
+    const end = new Date(endDate);
 
-  const handleDayToggle = (dateStr: string) => {
-    setSelectedDays(prev =>
-      prev.includes(dateStr)
-        ? prev.filter(d => d !== dateStr)
-        : [...prev, dateStr]
-    );
+    if (start > end) return [];
+
+    const dates = eachDayOfInterval({ start, end });
+
+    // 根據過濾條件篩選日期
+    return dates.filter(date => {
+      const dayOfWeek = date.getDay();
+      if (dateFilter === 'weekdays') {
+        return dayOfWeek !== 0 && dayOfWeek !== 6;
+      } else if (dateFilter === 'weekends') {
+        return dayOfWeek === 0 || dayOfWeek === 6;
+      }
+      return true;
+    });
+  }, [startDate, endDate, dateFilter]);
+
+  // 快速選擇日期範圍
+  const selectThisWeek = () => {
+    const start = startOfWeek(new Date(), { weekStartsOn: 1 });
+    const end = endOfWeek(new Date(), { weekStartsOn: 1 });
+    setStartDate(format(start, 'yyyy-MM-dd'));
+    setEndDate(format(end, 'yyyy-MM-dd'));
     setDateError('');
   };
 
-  const selectWeekdays = () => {
-    const weekdayDates = weekDays
-      .filter(day => {
-        const dayOfWeek = day.date.getDay();
-        return dayOfWeek !== 0 && dayOfWeek !== 6; // 排除週日(0)和週六(6)
-      })
-      .map(day => day.dateStr);
-    setSelectedDays(weekdayDates);
+  const selectLastWeek = () => {
+    const start = startOfWeek(subWeeks(new Date(), 1), { weekStartsOn: 1 });
+    const end = endOfWeek(subWeeks(new Date(), 1), { weekStartsOn: 1 });
+    setStartDate(format(start, 'yyyy-MM-dd'));
+    setEndDate(format(end, 'yyyy-MM-dd'));
     setDateError('');
   };
 
-  const selectWeekend = () => {
-    const weekendDates = weekDays
-      .filter(day => {
-        const dayOfWeek = day.date.getDay();
-        return dayOfWeek === 0 || dayOfWeek === 6; // 只選週日(0)和週六(6)
-      })
-      .map(day => day.dateStr);
-    setSelectedDays(weekendDates);
+  const selectThisMonth = () => {
+    const start = startOfMonth(new Date());
+    const end = endOfMonth(new Date());
+    setStartDate(format(start, 'yyyy-MM-dd'));
+    setEndDate(format(end, 'yyyy-MM-dd'));
     setDateError('');
-  };
-
-  const selectAll = () => {
-    setSelectedDays(weekDays.map(day => day.dateStr));
-    setDateError('');
-  };
-
-  const clearAll = () => {
-    setSelectedDays([]);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -89,8 +86,14 @@ export function AdminAddTimeEntryModal({ isOpen, onClose, onSubmit, projects, us
       hasError = true;
     }
 
-    if (selectedDays.length === 0) {
-      setDateError('請至少選擇一天');
+    if (!startDate || !endDate) {
+      setDateError('請選擇日期範圍');
+      hasError = true;
+    } else if (new Date(startDate) > new Date(endDate)) {
+      setDateError('結束日期不能早於開始日期');
+      hasError = true;
+    } else if (allDates.length === 0) {
+      setDateError('所選日期範圍內沒有符合條件的日期');
       hasError = true;
     }
 
@@ -100,10 +103,10 @@ export function AdminAddTimeEntryModal({ isOpen, onClose, onSubmit, projects, us
 
     setIsSubmitting(true);
 
-    const entries = selectedDays.map(dateStr => ({
+    const entries = allDates.map(date => ({
       project_id: projectId,
       hours,
-      date: dateStr,
+      date: format(date, 'yyyy-MM-dd'),
       note: note || undefined
     }));
 
@@ -112,7 +115,9 @@ export function AdminAddTimeEntryModal({ isOpen, onClose, onSubmit, projects, us
     // 重置表單
     setProjectId('');
     setHours(8);
-    setSelectedDays([]);
+    setStartDate(format(new Date(), 'yyyy-MM-dd'));
+    setEndDate(format(new Date(), 'yyyy-MM-dd'));
+    setDateFilter('all');
     setNote('');
     setProjectError('');
     setDateError('');
@@ -177,73 +182,133 @@ export function AdminAddTimeEntryModal({ isOpen, onClose, onSubmit, projects, us
           <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">每天將填入相同時數</p>
         </div>
 
-        {/* 日期多選 */}
+        {/* 日期範圍選擇 */}
         <div>
           <div className="flex items-center justify-between mb-2">
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-              選擇日期（本週） <span className="text-red-500 dark:text-red-400">*</span>
+              日期範圍 <span className="text-red-500 dark:text-red-400">*</span>
             </label>
             <div className="flex gap-1">
               <button
                 type="button"
-                onClick={selectWeekdays}
+                onClick={selectThisWeek}
                 className="px-2 py-1 text-xs bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-200 dark:hover:bg-gray-600"
               >
-                工作日
+                本週
               </button>
               <button
                 type="button"
-                onClick={selectWeekend}
+                onClick={selectLastWeek}
                 className="px-2 py-1 text-xs bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-200 dark:hover:bg-gray-600"
               >
-                週末
+                上週
               </button>
               <button
                 type="button"
-                onClick={selectAll}
+                onClick={selectThisMonth}
                 className="px-2 py-1 text-xs bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-200 dark:hover:bg-gray-600"
               >
-                全選
-              </button>
-              <button
-                type="button"
-                onClick={clearAll}
-                className="px-2 py-1 text-xs bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-200 dark:hover:bg-gray-600"
-              >
-                清除
+                本月
               </button>
             </div>
           </div>
-          <div className="grid grid-cols-7 gap-2">
-            {weekDays.map(day => (
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">開始日期</label>
+              <input
+                type="date"
+                value={startDate}
+                onChange={e => {
+                  setStartDate(e.target.value);
+                  setDateError('');
+                }}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 dark:[color-scheme:dark]"
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">結束日期</label>
+              <input
+                type="date"
+                value={endDate}
+                onChange={e => {
+                  setEndDate(e.target.value);
+                  setDateError('');
+                }}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 dark:[color-scheme:dark]"
+              />
+            </div>
+          </div>
+
+          {/* 日期過濾選項 */}
+          <div className="mt-3">
+            <label className="block text-xs text-gray-600 dark:text-gray-400 mb-2">包含日期類型</label>
+            <div className="flex gap-2">
               <button
-                key={day.dateStr}
                 type="button"
-                onClick={() => handleDayToggle(day.dateStr)}
-                className={`p-3 rounded-lg text-sm font-medium transition-colors ${
-                  selectedDays.includes(day.dateStr)
-                    ? 'bg-blue-500 dark:bg-blue-600 text-white'
+                onClick={() => setDateFilter('all')}
+                className={`px-3 py-1.5 text-sm rounded-lg ${
+                  dateFilter === 'all'
+                    ? 'bg-blue-600 text-white'
                     : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
                 }`}
               >
-                <div className="text-xs mb-1">{day.dayName}</div>
-                <div className="text-xs">{day.dayLabel}</div>
+                全部
               </button>
-            ))}
+              <button
+                type="button"
+                onClick={() => setDateFilter('weekdays')}
+                className={`px-3 py-1.5 text-sm rounded-lg ${
+                  dateFilter === 'weekdays'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                }`}
+              >
+                僅工作日
+              </button>
+              <button
+                type="button"
+                onClick={() => setDateFilter('weekends')}
+                className={`px-3 py-1.5 text-sm rounded-lg ${
+                  dateFilter === 'weekends'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                }`}
+              >
+                僅週末
+              </button>
+            </div>
           </div>
-          <div className="flex items-center justify-between mt-2">
-            <p className="text-xs text-gray-500 dark:text-gray-400">
-              已選擇 {selectedDays.length} 天
-            </p>
-            {dateError && (
-              <p className="text-sm text-red-600 dark:text-red-400 flex items-center gap-1">
-                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                </svg>
-                {dateError}
+
+          {/* 預覽將新增的日期 */}
+          {allDates.length > 0 && (
+            <div className="mt-3 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+              <p className="text-xs text-blue-700 dark:text-blue-400 mb-2">
+                將新增 <strong>{allDates.length}</strong> 天的工時記錄：
               </p>
-            )}
-          </div>
+              <div className="flex flex-wrap gap-1">
+                {allDates.slice(0, 10).map(date => (
+                  <span key={date.toISOString()} className="text-xs px-2 py-0.5 bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 rounded">
+                    {format(date, 'M/d (EEE)', { locale: zhTW })}
+                  </span>
+                ))}
+                {allDates.length > 10 && (
+                  <span className="text-xs px-2 py-0.5 text-blue-600 dark:text-blue-400">
+                    ... 還有 {allDates.length - 10} 天
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
+
+          {dateError && (
+            <p className="mt-2 text-sm text-red-600 dark:text-red-400 flex items-center gap-1">
+              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+              </svg>
+              {dateError}
+            </p>
+          )}
         </div>
 
         {/* 備註 */}
@@ -276,7 +341,7 @@ export function AdminAddTimeEntryModal({ isOpen, onClose, onSubmit, projects, us
             disabled={isSubmitting}
             className="flex-1"
           >
-            {isSubmitting ? '新增中...' : `新增 ${selectedDays.length} 筆工時`}
+            {isSubmitting ? '新增中...' : `新增 ${allDates.length} 筆工時`}
           </Button>
         </div>
       </form>
