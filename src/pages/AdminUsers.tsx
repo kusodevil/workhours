@@ -10,6 +10,7 @@ import type { Profile, TimeEntry } from '../types/database';
 import { Button } from '../components/ui';
 import { ConfirmModal } from '../components/ui';
 import { TimeEntryEditModal } from '../components/TimeEntryEditModal';
+import { AdminAddTimeEntryModal } from '../components/AdminAddTimeEntryModal';
 
 export function AdminUsers() {
   const { profile, isAuthenticated, isAdmin, isLoading: authLoading } = useAuth();
@@ -27,6 +28,7 @@ export function AdminUsers() {
   const [timeRange, setTimeRange] = useState<'week' | 'last-week' | 'month' | 'all'>('week');
   const [editingEntry, setEditingEntry] = useState<TimeEntry | null>(null);
   const [deletingEntryId, setDeletingEntryId] = useState<string | null>(null);
+  const [addingForUser, setAddingForUser] = useState<{ id: string; name: string } | null>(null);
 
   useEffect(() => {
     if (isAdmin) {
@@ -129,6 +131,38 @@ export function AdminUsers() {
         setTimeout(() => setError(''), 3000);
       }
       setDeletingEntryId(null);
+    }
+  };
+
+  // 為指定用戶新增工時記錄
+  const handleAddEntries = async (entries: Array<{ project_id: string; hours: number; date: string; note?: string }>) => {
+    if (!addingForUser) return;
+
+    try {
+      // 為每個記錄添加 user_id
+      const entriesWithUser = entries.map(entry => ({
+        ...entry,
+        user_id: addingForUser.id,
+        note: entry.note || null,
+      }));
+
+      const { error: insertError } = await supabase
+        .from('time_entries')
+        .insert(entriesWithUser);
+
+      if (insertError) {
+        setError(`新增失敗：${insertError.message}`);
+        setTimeout(() => setError(''), 3000);
+      } else {
+        setSuccess(`成功為 ${addingForUser.name} 新增 ${entries.length} 筆工時記錄`);
+        setTimeout(() => setSuccess(''), 3000);
+
+        // 刷新時數記錄（觸發 TimeEntryContext 重新載入）
+        window.location.reload();
+      }
+    } catch (err) {
+      setError('新增工時記錄時發生錯誤');
+      setTimeout(() => setError(''), 3000);
     }
   };
 
@@ -236,6 +270,16 @@ export function AdminUsers() {
                 {/* 展開的工時記錄區塊 */}
                 {expandedUserId === user.id && (
                   <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                    {/* 新增工時按鈕 */}
+                    <div className="mb-4">
+                      <button
+                        onClick={() => setAddingForUser({ id: user.id, name: user.username })}
+                        className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors"
+                      >
+                        + 新增工時
+                      </button>
+                    </div>
+
                     {/* 時間範圍篩選 */}
                     <div className="flex gap-2 mb-4 flex-wrap">
                       <button
@@ -406,6 +450,17 @@ export function AdminUsers() {
         confirmText="刪除"
         variant="danger"
       />
+
+      {/* 新增工時 Modal */}
+      {addingForUser && (
+        <AdminAddTimeEntryModal
+          isOpen={true}
+          onClose={() => setAddingForUser(null)}
+          onSubmit={handleAddEntries}
+          projects={projects}
+          userName={addingForUser.name}
+        />
+      )}
     </div>
   );
 }
