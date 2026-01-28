@@ -13,6 +13,7 @@ import { MyRecords } from './pages/MyRecords';
 import { Trends } from './pages/Trends';
 import { Settings } from './pages/Settings';
 import { AdminUsers } from './pages/AdminUsers';
+import { NotionTest } from './pages/NotionTest';
 
 function App() {
   return (
@@ -31,6 +32,7 @@ function App() {
               <Route path="/trends" element={<ProtectedRoute><Trends /></ProtectedRoute>} />
               <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
               <Route path="/admin/users" element={<ProtectedRoute><AdminUsers /></ProtectedRoute>} />
+              <Route path="/notion-test" element={<ProtectedRoute><NotionTest /></ProtectedRoute>} />
             </Routes>
               </Layout>
             </BrowserRouter>

@@ -1,0 +1,6 @@
+# Supabase 專案配置
+[functions]
+  enabled = true
+
+[functions.notion-query]
+  verify_jwt = true  # 驗證 JWT Token，只有登入用戶可呼叫

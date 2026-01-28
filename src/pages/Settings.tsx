@@ -3,6 +3,7 @@ import { Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
 import { Button } from '../components/ui';
+import { ThemeToggle } from '../components/ThemeToggle';
 
 export function Settings() {
   const { isAuthenticated, isLoading: authLoading, profile, user } = useAuth();
@@ -186,6 +187,17 @@ export function Settings() {
             </Button>
           </div>
         </form>
+      </div>
+
+      {/* Appearance Settings */}
+      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 mb-6">
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">外觀設定</h2>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+            主題模式
+          </label>
+          <ThemeToggle />
+        </div>
       </div>
 
       {/* Account Info */}

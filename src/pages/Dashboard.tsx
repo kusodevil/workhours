@@ -189,6 +189,12 @@ export function Dashboard() {
                       borderRadius: '8px',
                       color: effectiveTheme === 'dark' ? '#f3f4f6' : '#111827'
                     }}
+                    itemStyle={{
+                      color: effectiveTheme === 'dark' ? '#f3f4f6' : '#111827'
+                    }}
+                    labelStyle={{
+                      color: effectiveTheme === 'dark' ? '#f3f4f6' : '#111827'
+                    }}
                     wrapperStyle={{
                       outline: 'none',
                       zIndex: 1000
@@ -235,6 +241,12 @@ export function Dashboard() {
                       backgroundColor: effectiveTheme === 'dark' ? 'rgba(31, 41, 55, 0.98)' : 'rgba(255, 255, 255, 0.98)',
                       border: effectiveTheme === 'dark' ? '1px solid #374151' : '1px solid #e5e7eb',
                       borderRadius: '8px',
+                      color: effectiveTheme === 'dark' ? '#f3f4f6' : '#111827'
+                    }}
+                    itemStyle={{
+                      color: effectiveTheme === 'dark' ? '#f3f4f6' : '#111827'
+                    }}
+                    labelStyle={{
                       color: effectiveTheme === 'dark' ? '#f3f4f6' : '#111827'
                     }}
                   />
@@ -327,6 +339,12 @@ export function Dashboard() {
                     backgroundColor: effectiveTheme === 'dark' ? 'rgba(31, 41, 55, 0.98)' : 'rgba(255, 255, 255, 0.98)',
                     border: effectiveTheme === 'dark' ? '1px solid #374151' : '1px solid #e5e7eb',
                     borderRadius: '8px',
+                    color: effectiveTheme === 'dark' ? '#f3f4f6' : '#111827'
+                  }}
+                  itemStyle={{
+                    color: effectiveTheme === 'dark' ? '#f3f4f6' : '#111827'
+                  }}
+                  labelStyle={{
                     color: effectiveTheme === 'dark' ? '#f3f4f6' : '#111827'
                   }}
                 />
