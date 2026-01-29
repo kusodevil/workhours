@@ -42,6 +42,47 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 📝 更新 CONTRIBUTING.md 新增 UI 元件與表單驗證規範
 - 📝 更新開發流程文件
 
+## [1.1.0] - 2026-01-28
+
+### Added
+- 🌙 **Dark Mode（深色模式）**
+  - 支援亮色/暗色/系統跟隨三種模式
+  - 所有頁面和組件完整支援主題選擇
+  - 自動保存使用者偏好設定
+  - 修正暗色模式下 UI 顯示問題
+  - 修正 Dark Mode 下日期選擇器 icon 不明顯的問題
+- 👥 **管理者模式**
+  - 使用者管理功能（查看所有使用者）
+  - 管理員權限設定
+  - 查看和編輯所有使用者的工時記錄
+  - 管理者可為成員新增工時記錄
+  - 支援日期範圍選擇，不受本週限制
+- 📊 **匯出功能**
+  - Excel 格式匯出（支援中文）
+  - PDF 格式匯出（支援中文字體）
+  - 可匯出選定時間範圍的工時記錄
+- ⚡ **批次填入功能**
+  - 一次填入多個日期的工時記錄
+  - 支援選擇工作日/週末/全部日期
+  - 減少重複輸入作業
+- 📈 **週進度指示器**
+  - 視覺化顯示本週工時進度
+  - 即時更新已完成時數
+  - 顯示剩餘需填寫時數
+- ⚡ **快速填入面板**
+  - 複製上週工時記錄功能
+  - 快速選擇常用專案和任務
+  - 簡化每日工時登記流程
+
+### Fixed
+- 🔐 修正認證狀態初始化問題，防止登入狀態丟失
+- 🎨 統一全站錯誤提示風格，改用 Toast 通知
+- ⚙️ 改進管理者新增工時功能的使用體驗
+- 🐛 修正管理者新增工時的錯誤驗證顯示問題
+
+### Changed
+- 🔧 簡化管理者新增工時為單一日期模式（後改回日期範圍）
+
 ## [1.0.3] - 2026-01-27
 
 ### Changed
@@ -120,6 +161,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Storage 頭像上傳安全策略
 
 [1.2.0]: https://github.com/kusodevil/workhours/releases/tag/v1.2.0
+[1.1.0]: https://github.com/kusodevil/workhours/releases/tag/v1.1.0
 [1.0.3]: https://github.com/kusodevil/workhours/releases/tag/v1.0.3
 [1.0.2]: https://github.com/kusodevil/workhours/releases/tag/v1.0.2
 [1.0.1]: https://github.com/kusodevil/workhours/releases/tag/v1.0.1
