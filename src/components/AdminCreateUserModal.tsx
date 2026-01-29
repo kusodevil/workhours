@@ -18,6 +18,17 @@ export function AdminCreateUserModal({ isOpen, onClose, onSubmit }: AdminCreateU
     e.preventDefault();
     setError('');
 
+    // 驗證必填欄位
+    if (!username.trim()) {
+      setError('請填寫使用者名稱');
+      return;
+    }
+
+    if (!password.trim()) {
+      setError('請填寫密碼');
+      return;
+    }
+
     // 驗證 username（允許英文、數字、底線、中文）
     if (username.length < 2) {
       setError('使用者名稱至少需要 2 個字元');
@@ -89,7 +100,6 @@ export function AdminCreateUserModal({ isOpen, onClose, onSubmit }: AdminCreateU
                 onChange={e => setUsername(e.target.value)}
                 className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
                 placeholder="輸入使用者名稱"
-                required
                 disabled={loading}
                 autoComplete="off"
               />
@@ -108,7 +118,6 @@ export function AdminCreateUserModal({ isOpen, onClose, onSubmit }: AdminCreateU
                 onChange={e => setPassword(e.target.value)}
                 className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
                 placeholder="輸入密碼"
-                required
                 disabled={loading}
                 autoComplete="new-password"
               />

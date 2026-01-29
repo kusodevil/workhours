@@ -99,6 +99,95 @@ git push origin feature/your-feature-name
 - 保持 className 整潔且有組織
 - 響應式設計優先（mobile-first）
 
+### UI 元件與表單驗證
+
+#### 錯誤訊息風格（必須統一）
+
+**❌ 禁止使用瀏覽器原生驗證訊息**
+- 不要使用 HTML5 `required` 屬性來顯示錯誤訊息
+- 瀏覽器原生的驗證提示（橘色 tooltip）與專案風格不一致
+
+**✅ 使用統一的自訂錯誤訊息風格**
+
+所有錯誤訊息必須使用以下統一風格：
+
+```tsx
+{error && (
+  <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-red-600 dark:text-red-400 text-sm">
+    {error}
+  </div>
+)}
+```
+
+**實作步驟：**
+
+1. **加入狀態管理**
+   ```tsx
+   const [error, setError] = useState('');
+   ```
+
+2. **在 handleSubmit 中進行驗證**
+   ```tsx
+   const handleSubmit = async (e: React.FormEvent) => {
+     e.preventDefault();
+     setError('');
+
+     // 驗證必填欄位
+     if (!fieldValue.trim()) {
+       setError('請填寫此欄位');
+       return;
+     }
+
+     // 其他驗證邏輯...
+   };
+   ```
+
+3. **移除 `required` 屬性**
+   ```tsx
+   // ❌ 錯誤
+   <input type="text" required />
+
+   // ✅ 正確
+   <input type="text" />
+   ```
+
+4. **在表單頂部顯示錯誤訊息**
+   ```tsx
+   <form onSubmit={handleSubmit}>
+     {error && (
+       <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-red-600 dark:text-red-400 text-sm">
+         {error}
+       </div>
+     )}
+     {/* 其他表單欄位 */}
+   </form>
+   ```
+
+**參考範例：**
+- [Login.tsx](src/pages/Login.tsx) - line 33-36
+- [Register.tsx](src/pages/Register.tsx) - line 44-47
+- [AdminCreateUserModal.tsx](src/components/AdminCreateUserModal.tsx) - line 76-79
+
+#### 成功訊息風格
+
+```tsx
+{message?.type === 'success' && (
+  <div className="p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg text-green-600 dark:text-green-400 text-sm">
+    {message.text}
+  </div>
+)}
+```
+
+#### 開發檢查清單
+
+開發新功能或修改表單時，請確認：
+
+- [ ] 所有必填欄位使用 JavaScript 驗證（不使用 `required` 屬性）
+- [ ] 錯誤訊息使用統一的紅色 alert 風格
+- [ ] 成功訊息使用統一的綠色 alert 風格
+- [ ] 支援淺色和深色主題（使用 `dark:` 前綴）
+- [ ] 錯誤訊息文字清晰且友善
+
 ## 📋 提交規範
 
 我們使用 [Conventional Commits](https://www.conventionalcommits.org/) 規範。

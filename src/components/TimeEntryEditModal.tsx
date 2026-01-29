@@ -25,6 +25,12 @@ export function TimeEntryEditModal({ entry, projects, onClose, onSave }: TimeEnt
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
+    // 驗證必填欄位
+    if (!projectId || !hours || !date) {
+      return;
+    }
+
     onSave(entry.id, { project_id: projectId, hours, date, note });
     onClose();
   };
@@ -36,7 +42,6 @@ export function TimeEntryEditModal({ entry, projects, onClose, onSave }: TimeEnt
           label="專案"
           value={projectId}
           onChange={e => setProjectId(e.target.value)}
-          required
         >
           {activeProjects.map(project => (
             <option key={project.id} value={project.id}>
@@ -52,14 +57,12 @@ export function TimeEntryEditModal({ entry, projects, onClose, onSave }: TimeEnt
           step={0.5}
           value={hours}
           onChange={e => setHours(parseFloat(e.target.value) || 0)}
-          required
         />
         <Input
           label="日期"
           type="date"
           value={date}
           onChange={e => setDate(e.target.value)}
-          required
         />
         <Input
           label="備註"
