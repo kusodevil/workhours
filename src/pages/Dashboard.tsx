@@ -2,16 +2,20 @@ import { useState, useMemo, useEffect } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { useTimeEntries } from '../context/TimeEntryContext';
 import { useProjects } from '../context/ProjectContext';
+import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { supabase } from '../lib/supabase';
-import type { Profile } from '../types/database';
+import type { Profile, Department } from '../types/database';
 
 export function Dashboard() {
   const { timeEntries } = useTimeEntries();
   const { projects } = useProjects();
+  const { isSuperAdmin, isDepartmentAdmin, departmentId } = useAuth();
   const { effectiveTheme } = useTheme();
   const [selectedWeek, setSelectedWeek] = useState(0);
+  const [selectedDepartment, setSelectedDepartment] = useState<string>('all'); // 'all' or department_id
   const [profiles, setProfiles] = useState<Profile[]>([]);
+  const [departments, setDepartments] = useState<Department[]>([]);
 
   // Calculate week options
   const weekOptions = useMemo(() => {
@@ -32,15 +36,28 @@ export function Dashboard() {
     return options;
   }, []);
 
-  // Filter entries by selected week
+  // Filter entries by selected week and department
   const weekEntries = useMemo(() => {
     const week = weekOptions[selectedWeek];
     if (!week) return [];
+
     return timeEntries.filter(e => {
       const d = e.date;
-      return d >= week.start && d <= week.end;
+      const isInWeek = d >= week.start && d <= week.end;
+
+      if (!isInWeek) return false;
+
+      // Super Admin: filter by selected department
+      if (isSuperAdmin && selectedDepartment !== 'all') {
+        const profile = profiles.find(p => p.id === e.user_id);
+        return profile?.department_id === selectedDepartment;
+      }
+
+      // Department Admin/Member: already filtered by fetchProfiles
+      // Just need to check if the user is in our profiles list
+      return profiles.some(p => p.id === e.user_id);
     });
-  }, [selectedWeek, weekOptions, timeEntries]);
+  }, [selectedWeek, weekOptions, timeEntries, isSuperAdmin, selectedDepartment, profiles]);
 
   // Project stats for charts
   const projectStats = useMemo(() => {
@@ -86,24 +103,42 @@ export function Dashboard() {
     });
   }, [weekEntries, weekOptions, selectedWeek, projects]);
 
-  // Fetch all profiles
+  // Fetch departments and profiles
   useEffect(() => {
-    const fetchProfiles = async () => {
-      const { data, error } = await supabase
-        .from('profiles')
+    const fetchData = async () => {
+      // Fetch departments
+      const { data: deptData, error: deptError } = await supabase
+        .from('departments')
         .select('*')
-        .order('username');
+        .eq('is_active', true)
+        .order('name');
 
-      if (error) {
-        console.error('Error fetching profiles:', error);
-      } else if (data) {
-        console.log('Loaded profiles:', data.length, 'profiles');
-        setProfiles(data as Profile[]);
+      if (deptError) {
+        console.error('Error fetching departments:', deptError);
+      } else if (deptData) {
+        setDepartments(deptData as Department[]);
+      }
+
+      // Fetch profiles based on role
+      let query = supabase.from('profiles').select('*');
+
+      // If not super admin, filter by department
+      if (!isSuperAdmin && departmentId) {
+        query = query.eq('department_id', departmentId);
+      }
+
+      const { data: profileData, error: profileError } = await query.order('username');
+
+      if (profileError) {
+        console.error('Error fetching profiles:', profileError);
+      } else if (profileData) {
+        console.log('Loaded profiles:', profileData.length, 'profiles');
+        setProfiles(profileData as Profile[]);
       }
     };
 
-    fetchProfiles();
-  }, []);
+    fetchData();
+  }, [isSuperAdmin, departmentId]);
 
   // Member stats - hours by member and project
   const memberStats = useMemo(() => {
@@ -133,25 +168,54 @@ export function Dashboard() {
   const totalHours = weekEntries.reduce((sum, e) => sum + e.hours, 0);
   const avgHoursPerDay = totalHours / 7;
 
+  // Get current department name
+  const currentDepartmentName = useMemo(() => {
+    if (isSuperAdmin && selectedDepartment === 'all') {
+      return '全公司';
+    }
+
+    const deptId = isSuperAdmin ? selectedDepartment : departmentId;
+    const dept = departments.find(d => d.id === deptId);
+    return dept?.name || 'QA Team';
+  }, [isSuperAdmin, selectedDepartment, departmentId, departments]);
+
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">QA Team 的工時總覽</h1>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{currentDepartmentName} 的工時總覽</h1>
           <p className="text-gray-500 dark:text-gray-400 mt-1">查看團隊工時分配狀況</p>
         </div>
-        <select
-          value={selectedWeek}
-          onChange={e => setSelectedWeek(Number(e.target.value))}
-          className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none"
-        >
-          {weekOptions.map(opt => (
-            <option key={opt.value} value={opt.value}>
-              {opt.value === 0 ? '本週 ' : ''}{opt.label}
-            </option>
-          ))}
-        </select>
+        <div className="flex gap-3">
+          {/* Department Selector (Super Admin only) */}
+          {isSuperAdmin && (
+            <select
+              value={selectedDepartment}
+              onChange={e => setSelectedDepartment(e.target.value)}
+              className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none"
+            >
+              <option value="all">全公司</option>
+              {departments.map(dept => (
+                <option key={dept.id} value={dept.id}>
+                  {dept.name}
+                </option>
+              ))}
+            </select>
+          )}
+          {/* Week Selector */}
+          <select
+            value={selectedWeek}
+            onChange={e => setSelectedWeek(Number(e.target.value))}
+            className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none"
+          >
+            {weekOptions.map(opt => (
+              <option key={opt.value} value={opt.value}>
+                {opt.value === 0 ? '本週 ' : ''}{opt.label}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
 
       {/* Stats Cards */}
