@@ -10,7 +10,7 @@ import type { Profile, Department } from '../types/database';
 export function Dashboard() {
   const { timeEntries } = useTimeEntries();
   const { projects } = useProjects();
-  const { isSuperAdmin, isDepartmentAdmin, departmentId } = useAuth();
+  const { isSuperAdmin, departmentId } = useAuth();
   const { effectiveTheme } = useTheme();
   const [selectedWeek, setSelectedWeek] = useState(0);
   const [selectedDepartment, setSelectedDepartment] = useState<string>('all'); // 'all' or department_id

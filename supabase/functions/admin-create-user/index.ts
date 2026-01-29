@@ -6,6 +6,8 @@ import { verifyAuth } from '../_shared/auth.ts';
 interface CreateUserRequest {
   username: string;
   password: string;
+  department_id: string;
+  role?: 'super_admin' | 'department_admin' | 'member';
 }
 
 serve(async (req) => {
@@ -54,13 +56,13 @@ serve(async (req) => {
     console.log('[admin-create-user] Checking if user is admin:', userId);
     const { data: profile, error: profileError } = await supabaseAdmin
       .from('profiles')
-      .select('is_admin')
+      .select('role, department_id')
       .eq('id', userId)
       .single();
 
     console.log('[admin-create-user] Admin check result:', { profile, profileError });
 
-    if (profileError || !profile || !profile.is_admin) {
+    if (profileError || !profile || (profile.role !== 'super_admin' && profile.role !== 'department_admin')) {
       console.log('[admin-create-user] User is not admin or profile not found');
       return new Response(
         JSON.stringify({ error: '權限不足，僅管理者可建立使用者' }),
@@ -75,12 +77,22 @@ serve(async (req) => {
 
     // 解析請求
     const body: CreateUserRequest = await req.json();
-    const { username, password } = body;
+    const { username, password, department_id, role = 'member' } = body;
 
     // 驗證輸入
     if (!username || !password) {
       return new Response(
         JSON.stringify({ error: '使用者名稱和密碼為必填' }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
+    }
+
+    if (!department_id) {
+      return new Response(
+        JSON.stringify({ error: '部門為必填' }),
         {
           status: 400,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -103,6 +115,28 @@ serve(async (req) => {
         JSON.stringify({ error: '密碼至少需要 6 個字元' }),
         {
           status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
+    }
+
+    // 部門管理員只能在自己的部門建立使用者
+    if (profile.role === 'department_admin' && department_id !== profile.department_id) {
+      return new Response(
+        JSON.stringify({ error: '您只能在自己的部門建立使用者' }),
+        {
+          status: 403,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
+    }
+
+    // 部門管理員不能建立超級管理員
+    if (profile.role === 'department_admin' && role === 'super_admin') {
+      return new Response(
+        JSON.stringify({ error: '部門管理員無法建立超級管理員' }),
+        {
+          status: 403,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         }
       );
@@ -173,15 +207,17 @@ serve(async (req) => {
     // 等待一下讓 trigger 先創建 profile（如果有的話）
     await new Promise(resolve => setTimeout(resolve, 500));
 
-    // 使用 upsert 確保 profiles 表記錄存在，並設置 username
-    console.log('[admin-create-user] Upserting profile with username');
+    // 使用 upsert 確保 profiles 表記錄存在，並設置 username、department_id 和 role
+    console.log('[admin-create-user] Upserting profile with username, department, and role');
     const { data: upsertedProfile, error: profileUpsertError } = await supabaseAdmin
       .from('profiles')
       .upsert({
         id: newUser.user.id,
         username: username,
         email: internalEmail,
-        is_admin: false
+        department_id: department_id,
+        role: role,
+        is_admin: false // 保留向後相容
       }, {
         onConflict: 'id'
       })
