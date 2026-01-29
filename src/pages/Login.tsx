@@ -18,10 +18,11 @@ export function Login() {
     const result = await login(emailOrUsername, password);
     if (result.error) {
       setError(result.error);
+      setLoading(false);
     } else {
-      navigate('/');
+      // Force page reload to ensure all contexts are properly initialized
+      window.location.href = '/';
     }
-    setLoading(false);
   };
 
   return (

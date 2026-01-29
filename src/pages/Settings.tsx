@@ -15,6 +15,12 @@ export function Settings() {
   const [department, setDepartment] = useState<Department | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Password change states
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmNewPassword, setConfirmNewPassword] = useState('');
+  const [changingPassword, setChangingPassword] = useState(false);
+
   // Fetch department information
   useEffect(() => {
     const fetchDepartment = async () => {
@@ -124,6 +130,82 @@ export function Settings() {
     }
   };
 
+  const handlePasswordChange = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setMessage(null);
+
+    // Validation
+    if (!currentPassword || !newPassword || !confirmNewPassword) {
+      setMessage({ type: 'error', text: '請填寫所有密碼欄位' });
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      setMessage({ type: 'error', text: '新密碼至少需要 6 個字元' });
+      return;
+    }
+
+    if (newPassword !== confirmNewPassword) {
+      setMessage({ type: 'error', text: '新密碼與確認密碼不一致' });
+      return;
+    }
+
+    try {
+      setChangingPassword(true);
+
+      // Verify current password by creating a temporary client
+      const { createClient } = await import('@supabase/supabase-js');
+      const tempClient = createClient(
+        import.meta.env.VITE_SUPABASE_URL,
+        import.meta.env.VITE_SUPABASE_ANON_KEY,
+        {
+          auth: {
+            persistSession: false, // Don't persist this session
+            autoRefreshToken: false,
+          },
+        }
+      );
+
+      const { error: verifyError } = await tempClient.auth.signInWithPassword({
+        email: user.email!,
+        password: currentPassword,
+      });
+
+      if (verifyError) {
+        setMessage({ type: 'error', text: '目前密碼錯誤' });
+        setChangingPassword(false);
+        return;
+      }
+
+      // Update to new password using the original authenticated session
+      const { error: updateError } = await supabase.auth.updateUser({
+        password: newPassword,
+      });
+
+      if (updateError) {
+        throw updateError;
+      }
+
+      setMessage({ type: 'success', text: '密碼更新成功！請使用新密碼重新登入' });
+
+      // Clear password fields
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmNewPassword('');
+
+      // Log out user after 2 seconds so they can re-login with new password
+      setTimeout(async () => {
+        await supabase.auth.signOut();
+        window.location.href = '/login';
+      }, 2000);
+    } catch (error) {
+      console.error('Error changing password:', error);
+      setMessage({ type: 'error', text: '密碼更新失敗，請重試' });
+    } finally {
+      setChangingPassword(false);
+    }
+  };
+
   return (
     <div className="max-w-2xl mx-auto">
       <div className="mb-6">
@@ -219,6 +301,71 @@ export function Settings() {
           </label>
           <ThemeToggle />
         </div>
+      </div>
+
+      {/* Password Change Section */}
+      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 mb-6">
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">變更密碼</h2>
+        <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+          更新密碼後，系統會自動登出，請使用新密碼重新登入
+        </p>
+        <form onSubmit={handlePasswordChange}>
+          <div className="space-y-4">
+            {message && (
+              <div
+                className={`p-3 rounded-lg text-sm ${
+                  message.type === 'success'
+                    ? 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-400'
+                    : 'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400'
+                }`}
+              >
+                {message.text}
+              </div>
+            )}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                目前密碼
+              </label>
+              <input
+                type="password"
+                value={currentPassword}
+                onChange={(e) => setCurrentPassword(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                placeholder="輸入目前密碼"
+                autoComplete="current-password"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                新密碼
+              </label>
+              <input
+                type="password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                placeholder="輸入新密碼（至少 6 個字元）"
+                autoComplete="new-password"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                確認新密碼
+              </label>
+              <input
+                type="password"
+                value={confirmNewPassword}
+                onChange={(e) => setConfirmNewPassword(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                placeholder="再次輸入新密碼"
+                autoComplete="new-password"
+              />
+            </div>
+            <Button type="submit" disabled={changingPassword}>
+              {changingPassword ? '更新中...' : '更新密碼'}
+            </Button>
+          </div>
+        </form>
       </div>
 
       {/* Account Info */}

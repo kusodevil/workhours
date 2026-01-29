@@ -38,6 +38,9 @@ export function AdminUsers() {
   // 刪除使用者相關狀態
   const [deletingUser, setDeletingUser] = useState<{ id: string; name: string } | null>(null);
 
+  // 重置密碼相關狀態
+  const [resettingPasswordUser, setResettingPasswordUser] = useState<{ email: string; name: string } | null>(null);
+
   useEffect(() => {
     if (isSuperAdmin || isDepartmentAdmin) {
       fetchUsers();
@@ -256,6 +259,37 @@ export function AdminUsers() {
     }
   };
 
+  // 重置密碼
+  const handleResetPassword = async () => {
+    if (!resettingPasswordUser) return;
+
+    try {
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+      const response = await fetch(`${supabaseUrl}/functions/v1/reset-password`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${supabaseKey}`,
+        },
+        body: JSON.stringify({ email: resettingPasswordUser.email }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        setToast({ message: `重置失敗：${result.error || '未知錯誤'}`, type: 'error' });
+      } else {
+        setToast({ message: `成功將 ${resettingPasswordUser.name} 的密碼重置為 000000`, type: 'success' });
+      }
+    } catch (err) {
+      setToast({ message: '重置密碼時發生錯誤', type: 'error' });
+    } finally {
+      setResettingPasswordUser(null);
+    }
+  };
+
   // 等待認證狀態載入
   if (authLoading) {
     return <div className="flex justify-center py-12 text-gray-900 dark:text-gray-100">載入中...</div>;
@@ -277,7 +311,7 @@ export function AdminUsers() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="max-w-2xl mx-auto">
       <div className="mb-6 flex justify-between items-start">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">管理帳號</h1>
@@ -308,87 +342,99 @@ export function AdminUsers() {
           <div className="divide-y divide-gray-200 dark:divide-gray-700">
             {users.map(user => (
               <div key={user.id} className="p-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    {user.avatar_url ? (
-                      <img
-                        src={user.avatar_url}
-                        alt={user.username}
-                        className="w-12 h-12 rounded-full object-cover"
-                      />
-                    ) : (
-                      <div className="w-12 h-12 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
-                        <span className="text-xl font-semibold text-blue-600 dark:text-blue-400">
-                          {user.username?.charAt(0).toUpperCase() || 'U'}
-                        </span>
-                      </div>
-                    )}
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <p className="font-medium text-gray-900 dark:text-gray-100">{user.username}</p>
-                        {user.role === 'super_admin' && (
-                          <span className="px-2 py-0.5 text-xs font-medium bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 rounded">
-                            超級管理員
-                          </span>
-                        )}
-                        {user.role === 'department_admin' && (
-                          <span className="px-2 py-0.5 text-xs font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 rounded">
-                            部門管理員
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">{user.email}</p>
-                      {user.department_id && (
-                        <p className="text-sm text-blue-600 dark:text-blue-400 mt-0.5">
-                          {departments.find(d => d.id === user.department_id)?.name || '未知部門'}
-                        </p>
-                      )}
-                      <p className="text-xs text-gray-400 dark:text-gray-500">
-                        註冊時間：{new Date(user.created_at).toLocaleDateString('zh-TW')}
-                      </p>
+                {/* 用戶資訊 */}
+                <div className="flex items-start gap-4 mb-3">
+                  {user.avatar_url ? (
+                    <img
+                      src={user.avatar_url}
+                      alt={user.username}
+                      className="w-12 h-12 rounded-full object-cover flex-shrink-0"
+                    />
+                  ) : (
+                    <div className="w-12 h-12 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center flex-shrink-0">
+                      <span className="text-xl font-semibold text-blue-600 dark:text-blue-400">
+                        {user.username?.charAt(0).toUpperCase() || 'U'}
+                      </span>
                     </div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <p className="font-medium text-gray-900 dark:text-gray-100">{user.username}</p>
+                      {user.role === 'super_admin' && (
+                        <span className="px-2 py-0.5 text-xs font-medium bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 rounded">
+                          超級管理員
+                        </span>
+                      )}
+                      {user.role === 'department_admin' && (
+                        <span className="px-2 py-0.5 text-xs font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 rounded">
+                          部門管理員
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 truncate">{user.email}</p>
+                    {user.department_id && (
+                      <p className="text-sm text-blue-600 dark:text-blue-400 mt-0.5">
+                        {departments.find(d => d.id === user.department_id)?.name || '未知部門'}
+                      </p>
+                    )}
+                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+                      註冊時間：{new Date(user.created_at).toLocaleDateString('zh-TW')}
+                    </p>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => setExpandedUserId(expandedUserId === user.id ? null : user.id)}
-                      className="px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
-                    >
-                      {expandedUserId === user.id ? '收起工時' : '查看工時'}
-                    </button>
-                    <select
-                      value={user.role}
-                      onChange={(e) => updateUserRole(user.id, e.target.value as UserRole)}
-                      disabled={updatingUserId === user.id || (!isSuperAdmin && user.role === 'super_admin') || user.id === profile?.id}
-                      className="px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
-                      title={user.id === profile?.id ? '不能修改自己的角色' : '選擇角色'}
-                    >
-                      <option value="member">一般成員</option>
-                      <option value="department_admin">部門管理員</option>
-                      {isSuperAdmin && <option value="super_admin">超級管理員</option>}
-                    </select>
-                    <select
-                      value={user.department_id || ''}
-                      onChange={(e) => updateUserDepartment(user.id, e.target.value)}
-                      disabled={updatingUserId === user.id || (!isSuperAdmin) || user.id === profile?.id}
-                      className="px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
-                      title={user.id === profile?.id ? '不能修改自己的部門' : '選擇部門'}
-                    >
-                      <option value="">未分配部門</option>
-                      {departments.map(dept => (
-                        <option key={dept.id} value={dept.id}>
-                          {dept.name}
-                        </option>
-                      ))}
-                    </select>
-                    <button
-                      onClick={() => setDeletingUser({ id: user.id, name: user.username })}
-                      disabled={user.id === profile?.id}
-                      className="px-3 py-1.5 text-sm text-red-600 dark:text-red-400 border border-red-300 dark:border-red-600 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/30 disabled:opacity-50 disabled:cursor-not-allowed"
-                      title={user.id === profile?.id ? '不能刪除自己的帳號' : '刪除使用者'}
-                    >
-                      刪除
-                    </button>
-                  </div>
+                </div>
+
+                {/* 操作區域 - 緊湊單行佈局 */}
+                <div className="flex items-center gap-2 flex-wrap">
+                  <select
+                    value={user.role}
+                    onChange={(e) => updateUserRole(user.id, e.target.value as UserRole)}
+                    disabled={updatingUserId === user.id || (!isSuperAdmin && user.role === 'super_admin') || user.id === profile?.id}
+                    className="px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 disabled:opacity-50"
+                    title={user.id === profile?.id ? '不能修改自己的角色' : '選擇角色'}
+                  >
+                    <option value="member">一般成員</option>
+                    <option value="department_admin">部門管理員</option>
+                    {isSuperAdmin && <option value="super_admin">超級管理員</option>}
+                  </select>
+
+                  <select
+                    value={user.department_id || ''}
+                    onChange={(e) => updateUserDepartment(user.id, e.target.value)}
+                    disabled={updatingUserId === user.id || (!isSuperAdmin) || user.id === profile?.id}
+                    className="px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 disabled:opacity-50"
+                    title={user.id === profile?.id ? '不能修改自己的部門' : '選擇部門'}
+                  >
+                    {!user.department_id && <option value="">請選擇部門</option>}
+                    {departments.map(dept => (
+                      <option key={dept.id} value={dept.id}>
+                        {dept.name}
+                      </option>
+                    ))}
+                  </select>
+
+                  <button
+                    onClick={() => setExpandedUserId(expandedUserId === user.id ? null : user.id)}
+                    className="px-2.5 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
+                  >
+                    {expandedUserId === user.id ? '收起' : '工時'}
+                  </button>
+
+                  <button
+                    onClick={() => setResettingPasswordUser({ email: user.email, name: user.username })}
+                    className="px-2.5 py-1 text-sm text-orange-600 dark:text-orange-400 border border-orange-300 dark:border-orange-600 rounded-md hover:bg-orange-50 dark:hover:bg-orange-900/30"
+                    title="重置密碼為 000000"
+                  >
+                    重置
+                  </button>
+
+                  <button
+                    onClick={() => setDeletingUser({ id: user.id, name: user.username })}
+                    disabled={user.id === profile?.id}
+                    className="px-2.5 py-1 text-sm text-red-600 dark:text-red-400 border border-red-300 dark:border-red-600 rounded-md hover:bg-red-50 dark:hover:bg-red-900/30 disabled:opacity-50 disabled:cursor-not-allowed"
+                    title={user.id === profile?.id ? '不能刪除自己的帳號' : '刪除使用者'}
+                  >
+                    刪除
+                  </button>
                 </div>
 
                 {/* 展開的工時記錄區塊 */}
@@ -603,6 +649,17 @@ export function AdminUsers() {
         message={`確定要刪除使用者「${deletingUser?.name}」嗎？此操作將刪除該使用者及其所有相關資料，且無法復原。`}
         confirmText="刪除"
         variant="danger"
+      />
+
+      {/* 重置密碼確認 Modal */}
+      <ConfirmModal
+        isOpen={!!resettingPasswordUser}
+        onClose={() => setResettingPasswordUser(null)}
+        onConfirm={handleResetPassword}
+        title="確認重置密碼"
+        message={`確定要將使用者「${resettingPasswordUser?.name}」的密碼重置為 000000 嗎？`}
+        confirmText="重置密碼"
+        variant="primary"
       />
     </div>
   );
