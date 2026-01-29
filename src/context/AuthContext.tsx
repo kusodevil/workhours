@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
 import type { User } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
+import { invokeEdgeFunction } from '../lib/edge-functions';
 import type { Profile } from '../types/database';
 
 interface AuthContextType {
@@ -88,18 +89,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     // 如果輸入的不是 email 格式（不包含 @），假設是 username
     if (!emailOrUsername.includes('@')) {
-      // 查詢 profiles 表找到對應的 email
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('email')
-        .eq('username', emailOrUsername)
-        .maybeSingle();
+      console.log('[AuthContext] Looking up email for username:', emailOrUsername);
 
-      if (profileError || !profile) {
+      // 使用 Edge Function 查詢 email（繞過 RLS）
+      const { data, error: lookupError } = await invokeEdgeFunction<{ email: string }>('lookup-email-by-username', {
+        username: emailOrUsername
+      });
+
+      console.log('[AuthContext] Lookup result:', { data, lookupError });
+
+      if (lookupError) {
+        console.error('[AuthContext] Lookup error:', lookupError);
+        return { error: lookupError };
+      }
+
+      if (!data?.email) {
+        console.log('[AuthContext] No email found for username:', emailOrUsername);
         return { error: '找不到此使用者' };
       }
 
-      email = profile.email;
+      console.log('[AuthContext] Found email for username:', data.email);
+      email = data.email;
     }
 
     const { error } = await supabase.auth.signInWithPassword({

@@ -15,7 +15,9 @@ serve(async (req) => {
 
   try {
     // 驗證用戶身份
+    console.log('[admin-create-user] Request received');
     const { userId, error: authError } = await verifyAuth(req);
+    console.log('[admin-create-user] Auth verification result:', { userId, authError });
     if (authError || !userId) {
       return new Response(
         JSON.stringify({ error: '未授權，請先登入' }),
@@ -26,19 +28,40 @@ serve(async (req) => {
       );
     }
 
-    // 建立 Supabase client（使用 ANON_KEY 查詢用戶權限）
+    // 建立 Supabase Admin client（使用 Service Role Key 繞過 RLS）
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
-    const supabase = createClient(supabaseUrl, supabaseAnonKey);
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 
-    // 檢查呼叫者是否為管理者
-    const { data: profile, error: profileError } = await supabase
+    if (!supabaseServiceKey) {
+      console.error('[admin-create-user] SUPABASE_SERVICE_ROLE_KEY not configured');
+      return new Response(
+        JSON.stringify({ error: '服務配置錯誤' }),
+        {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
+    }
+
+    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false
+      }
+    });
+
+    // 檢查呼叫者是否為管理者（使用 Service Role Key 繞過 RLS）
+    console.log('[admin-create-user] Checking if user is admin:', userId);
+    const { data: profile, error: profileError } = await supabaseAdmin
       .from('profiles')
       .select('is_admin')
       .eq('id', userId)
       .single();
 
+    console.log('[admin-create-user] Admin check result:', { profile, profileError });
+
     if (profileError || !profile || !profile.is_admin) {
+      console.log('[admin-create-user] User is not admin or profile not found');
       return new Response(
         JSON.stringify({ error: '權限不足，僅管理者可建立使用者' }),
         {
@@ -47,6 +70,8 @@ serve(async (req) => {
         }
       );
     }
+
+    console.log('[admin-create-user] User is admin, proceeding to create user');
 
     // 解析請求
     const body: CreateUserRequest = await req.json();
@@ -84,7 +109,7 @@ serve(async (req) => {
     }
 
     // 檢查 username 是否已存在
-    const { data: existingUser, error: checkError } = await supabase
+    const { data: existingUser, error: checkError } = await supabaseAdmin
       .from('profiles')
       .select('id')
       .eq('username', username)
@@ -111,32 +136,15 @@ serve(async (req) => {
       );
     }
 
-    // 使用 Service Role Key 建立 Supabase Admin client
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-    if (!supabaseServiceKey) {
-      console.error('[admin-create-user] SUPABASE_SERVICE_ROLE_KEY not configured');
-      return new Response(
-        JSON.stringify({ error: '服務配置錯誤' }),
-        {
-          status: 500,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        }
-      );
-    }
-
-    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false
-      }
-    });
-
     // 為 username 生成內部 email
-    const internalEmail = `${username}@workhours.internal`;
+    // 使用 crypto.randomUUID() 生成唯一的 email，避免中文字符問題
+    const emailPrefix = crypto.randomUUID().replace(/-/g, '').substring(0, 16);
+    const internalEmail = `user_${emailPrefix}@workhours.internal`;
 
     console.log(`[admin-create-user] Creating user with username: ${username}, email: ${internalEmail}`);
 
     // 使用 Admin API 建立使用者
+    console.log('[admin-create-user] Calling supabaseAdmin.auth.admin.createUser...');
     const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
       email: internalEmail,
       password: password,
@@ -146,8 +154,11 @@ serve(async (req) => {
       },
     });
 
+    console.log('[admin-create-user] Admin API call completed');
+
     if (createError) {
       console.error('[admin-create-user] Error creating user:', createError);
+      console.error('[admin-create-user] Error details:', JSON.stringify(createError));
       return new Response(
         JSON.stringify({ error: `建立使用者失敗：${createError.message}` }),
         {
@@ -158,6 +169,43 @@ serve(async (req) => {
     }
 
     console.log(`[admin-create-user] Successfully created user ${username} with ID ${newUser.user.id}`);
+
+    // 等待一下讓 trigger 先創建 profile（如果有的話）
+    await new Promise(resolve => setTimeout(resolve, 500));
+
+    // 使用 upsert 確保 profiles 表記錄存在，並設置 username
+    console.log('[admin-create-user] Upserting profile with username');
+    const { data: upsertedProfile, error: profileUpsertError } = await supabaseAdmin
+      .from('profiles')
+      .upsert({
+        id: newUser.user.id,
+        username: username,
+        email: internalEmail,
+        is_admin: false
+      }, {
+        onConflict: 'id'
+      })
+      .select()
+      .single();
+
+    if (profileUpsertError) {
+      console.error('[admin-create-user] Error upserting profile:', profileUpsertError);
+      // 不要因為這個失敗而返回錯誤，用戶已經創建成功了
+    } else {
+      console.log('[admin-create-user] Profile upserted successfully:', upsertedProfile);
+    }
+
+    // 驗證 username 是否真的被寫入
+    const { data: verifyProfile, error: verifyError } = await supabaseAdmin
+      .from('profiles')
+      .select('username, email')
+      .eq('id', newUser.user.id)
+      .single();
+
+    console.log('[admin-create-user] Verification - Profile data:', verifyProfile);
+    if (verifyError) {
+      console.error('[admin-create-user] Verification failed:', verifyError);
+    }
 
     return new Response(
       JSON.stringify({

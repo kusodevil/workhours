@@ -35,6 +35,9 @@ export function AdminUsers() {
   // 新增使用者相關狀態
   const [showCreateModal, setShowCreateModal] = useState(false);
 
+  // 刪除使用者相關狀態
+  const [deletingUser, setDeletingUser] = useState<{ id: string; name: string } | null>(null);
+
   useEffect(() => {
     if (isAdmin) {
       fetchUsers();
@@ -178,6 +181,29 @@ export function AdminUsers() {
     await fetchUsers();
   };
 
+  // 刪除使用者
+  const handleDeleteUser = async () => {
+    if (!deletingUser) return;
+
+    try {
+      const { error } = await invokeEdgeFunction('admin-delete-user', {
+        userId: deletingUser.id,
+      });
+
+      if (error) {
+        setToast({ message: `刪除失敗：${error}`, type: 'error' });
+      } else {
+        setToast({ message: `成功刪除使用者 ${deletingUser.name}`, type: 'success' });
+        // 重新載入用戶列表
+        await fetchUsers();
+      }
+    } catch (err) {
+      setToast({ message: '刪除使用者時發生錯誤', type: 'error' });
+    } finally {
+      setDeletingUser(null);
+    }
+  };
+
   // 等待認證狀態載入
   if (authLoading) {
     return <div className="flex justify-center py-12 text-gray-900 dark:text-gray-100">載入中...</div>;
@@ -280,6 +306,14 @@ export function AdminUsers() {
                         ? '移除管理者'
                         : '設為管理者'}
                     </Button>
+                    <button
+                      onClick={() => setDeletingUser({ id: user.id, name: user.username })}
+                      disabled={user.id === profile?.id}
+                      className="px-3 py-1.5 text-sm text-red-600 dark:text-red-400 border border-red-300 dark:border-red-600 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/30 disabled:opacity-50 disabled:cursor-not-allowed"
+                      title={user.id === profile?.id ? '不能刪除自己的帳號' : '刪除使用者'}
+                    >
+                      刪除
+                    </button>
                   </div>
                 </div>
 
@@ -483,6 +517,17 @@ export function AdminUsers() {
         isOpen={showCreateModal}
         onClose={() => setShowCreateModal(false)}
         onSubmit={handleCreateUser}
+      />
+
+      {/* 刪除使用者確認 Modal */}
+      <ConfirmModal
+        isOpen={!!deletingUser}
+        onClose={() => setDeletingUser(null)}
+        onConfirm={handleDeleteUser}
+        title="確認刪除使用者"
+        message={`確定要刪除使用者「${deletingUser?.name}」嗎？此操作將刪除該使用者及其所有相關資料，且無法復原。`}
+        confirmText="刪除"
+        variant="danger"
       />
     </div>
   );
