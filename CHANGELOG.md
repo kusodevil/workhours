@@ -5,6 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.1] - 2026-01-29
+
+### Added
+- ⚡ **複製上一筆功能**
+  - 填寫工時頁面新增「複製上一筆」按鈕
+  - 快速複製最後一筆工時的所有資訊（專案、時數、日期、備註）
+  - 減少重複輸入，提升填寫效率
+
+### Changed
+- 📊 **工時紀錄顯示優化**
+  - 我的紀錄頁面改為按日期分組顯示（原為按週）
+  - 工作日顯示 8 小時目標達成狀態
+  - 未達標時顯示還差多少小時
+  - 顏色區分：綠色（已達標）、橘色（未達標）、藍色（周末）
+- 📈 **週進度指示器增強**
+  - 填寫工時頁面的週進度指示器應用相同顏色規則
+  - 每天顯示實際工時數
+  - 工作日達標狀態一目了然
+  - 滑鼠懸停顯示詳細資訊
+
 ## [1.2.0] - 2026-01-29
 
 ### Added
@@ -160,6 +180,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 使用者只能查看/編輯自己的工時紀錄
 - Storage 頭像上傳安全策略
 
+[1.2.1]: https://github.com/kusodevil/workhours/releases/tag/v1.2.1
 [1.2.0]: https://github.com/kusodevil/workhours/releases/tag/v1.2.0
 [1.1.0]: https://github.com/kusodevil/workhours/releases/tag/v1.1.0
 [1.0.3]: https://github.com/kusodevil/workhours/releases/tag/v1.0.3

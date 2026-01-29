@@ -62,6 +62,12 @@ export function Timesheet() {
     setEntries([...entries, { projectId: '', hours: 0, date: new Date().toISOString().split('T')[0], note: '' }]);
   };
 
+  const copyLastEntry = () => {
+    if (entries.length === 0) return;
+    const lastEntry = entries[entries.length - 1];
+    setEntries([...entries, { ...lastEntry }]);
+  };
+
   const removeEntry = (index: number) => {
     setEntries(entries.filter((_, i) => i !== index));
   };
@@ -335,14 +341,24 @@ export function Timesheet() {
           ))}
         </div>
 
-        {/* Add Entry Button */}
-        <button
-          type="button"
-          onClick={addFormEntry}
-          className="w-full py-3 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl text-gray-500 dark:text-gray-400 hover:border-blue-400 hover:text-blue-500 transition-colors"
-        >
-          + 新增一筆工時
-        </button>
+        {/* Add Entry Buttons */}
+        <div className="grid grid-cols-2 gap-3">
+          <button
+            type="button"
+            onClick={addFormEntry}
+            className="py-3 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl text-gray-500 dark:text-gray-400 hover:border-blue-400 hover:text-blue-500 transition-colors"
+          >
+            + 新增一筆工時
+          </button>
+          <button
+            type="button"
+            onClick={copyLastEntry}
+            disabled={entries.length === 0}
+            className="py-3 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl text-gray-500 dark:text-gray-400 hover:border-green-400 hover:text-green-500 transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:border-gray-300 disabled:hover:text-gray-400"
+          >
+            📋 複製上一筆
+          </button>
+        </div>
 
         {/* Summary & Submit */}
         <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4">

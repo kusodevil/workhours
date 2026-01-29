@@ -3,7 +3,7 @@ import { Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTimeEntries } from '../context/TimeEntryContext';
 import { useProjects } from '../context/ProjectContext';
-import { format, startOfWeek, endOfWeek, subWeeks } from 'date-fns';
+import { format, startOfWeek, endOfWeek, subWeeks, isWeekend } from 'date-fns';
 import { zhTW } from 'date-fns/locale';
 import { ConfirmModal } from '../components/ui';
 import { Card } from '../components/ui';
@@ -68,28 +68,38 @@ export function MyRecords() {
     });
   }, [userEntries, selectedWeek, weekOptions]);
 
-  // Group entries by week
-  const entriesByWeek = useMemo(() => {
+  // Group entries by date
+  const entriesByDate = useMemo(() => {
     const grouped: Record<string, typeof filteredEntries> = {};
 
     filteredEntries.forEach(entry => {
-      const weekStart = startOfWeek(new Date(entry.date), { weekStartsOn: 1 });
-      const weekKey = format(weekStart, 'yyyy-MM-dd');
+      const dateKey = entry.date; // 使用原本的日期作為 key
 
-      if (!grouped[weekKey]) {
-        grouped[weekKey] = [];
+      if (!grouped[dateKey]) {
+        grouped[dateKey] = [];
       }
-      grouped[weekKey].push(entry);
+      grouped[dateKey].push(entry);
     });
 
     return Object.entries(grouped)
       .sort(([a], [b]) => new Date(b).getTime() - new Date(a).getTime())
-      .map(([weekStart, entries]) => ({
-        weekStart: new Date(weekStart),
-        weekEnd: endOfWeek(new Date(weekStart), { weekStartsOn: 1 }),
-        entries,
-        totalHours: entries.reduce((sum, e) => sum + e.hours, 0),
-      }));
+      .map(([dateStr, entries]) => {
+        const date = new Date(dateStr);
+        const totalHours = entries.reduce((sum, e) => sum + e.hours, 0);
+        const isWorkday = !isWeekend(date); // 判斷是否為工作日
+        const hoursNeeded = isWorkday ? 8 : 0; // 工作日目標 8 小時
+        const shortfall = isWorkday ? Math.max(0, hoursNeeded - totalHours) : 0; // 還差多少小時
+
+        return {
+          date,
+          dateStr,
+          entries,
+          totalHours,
+          isWorkday,
+          hoursNeeded,
+          shortfall,
+        };
+      });
   }, [filteredEntries]);
 
   // Calculate stats (always based on all user entries, not filtered)
@@ -190,20 +200,38 @@ export function MyRecords() {
         </div>
       )}
 
-      {/* Weekly Records */}
-      <div className="space-y-4">
-        {entriesByWeek.map(week => (
-          <Card key={week.weekStart.toISOString()} padding={false} className="overflow-hidden">
-            <div className="px-6 py-4 bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
-              <h3 className="font-semibold text-gray-900 dark:text-gray-100">
-                {format(week.weekStart, 'M月d日', { locale: zhTW })} - {format(week.weekEnd, 'M月d日', { locale: zhTW })}
-              </h3>
-              <span className="text-sm font-medium text-blue-600 dark:text-blue-400">
-                共 {week.totalHours} 小時
-              </span>
+      {/* Daily Records */}
+      <div className="space-y-3">
+        {entriesByDate.map(day => (
+          <Card key={day.dateStr} padding={false} className="overflow-hidden">
+            <div className="px-6 py-4 bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
+              <div className="flex justify-between items-center">
+                <h3 className="font-semibold text-gray-900 dark:text-gray-100">
+                  {format(day.date, 'M月d日 (EEEE)', { locale: zhTW })}
+                </h3>
+                <div className="flex items-center gap-3">
+                  <span className={`text-sm font-medium ${
+                    day.isWorkday
+                      ? day.totalHours >= 8
+                        ? 'text-green-600 dark:text-green-400'
+                        : 'text-orange-600 dark:text-orange-400'
+                      : 'text-blue-600 dark:text-blue-400'
+                  }`}>
+                    {day.totalHours} 小時
+                    {day.isWorkday && day.totalHours < 8 && (
+                      <span className="ml-2 text-xs text-gray-500 dark:text-gray-400">
+                        (還差 {day.shortfall} 小時)
+                      </span>
+                    )}
+                    {day.isWorkday && day.totalHours >= 8 && (
+                      <span className="ml-2">✓</span>
+                    )}
+                  </span>
+                </div>
+              </div>
             </div>
             <div className="divide-y divide-gray-100 dark:divide-gray-700">
-              {week.entries.map(entry => {
+              {day.entries.map(entry => {
                 const project = getProjectById(entry.project_id);
                 return (
                   <div key={entry.id} className="px-6 py-4 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-700/50 group">
@@ -251,7 +279,7 @@ export function MyRecords() {
         ))}
       </div>
 
-      {entriesByWeek.length === 0 && (
+      {entriesByDate.length === 0 && (
         <Card className="text-center py-12">
           <p className="text-gray-500 dark:text-gray-400">
             {selectedWeek === 'all' ? '尚無工時紀錄' : '此週無工時紀錄'}

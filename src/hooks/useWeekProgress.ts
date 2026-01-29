@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { startOfWeek, endOfWeek, eachDayOfInterval, format } from 'date-fns';
+import { startOfWeek, endOfWeek, eachDayOfInterval, format, isWeekend } from 'date-fns';
 import { zhTW } from 'date-fns/locale';
 import type { TimeEntry } from '../types/database';
 
@@ -13,6 +13,9 @@ export interface WeekProgress {
     dayName: string;
     filled: boolean;
     hours: number;
+    isWorkday: boolean;
+    isComplete: boolean;
+    shortfall: number;
   }>;
 }
 
@@ -37,12 +40,18 @@ export function useWeekProgress(
         e => e.user_id === userId && e.date === dayStr
       );
       const hours = dayEntries.reduce((sum, e) => sum + e.hours, 0);
+      const isWorkday = !isWeekend(day); // 判斷是否為工作日
+      const isComplete = isWorkday ? hours >= 8 : hours > 0; // 工作日需達 8 小時，周末有填就算完成
+      const shortfall = isWorkday ? Math.max(0, 8 - hours) : 0; // 還差多少小時
 
       return {
         date: day,
         dayName: format(day, 'EEE', { locale: zhTW }),
         filled: hours > 0,
-        hours
+        hours,
+        isWorkday,
+        isComplete,
+        shortfall
       };
     });
 

@@ -38,19 +38,46 @@ export function WeekProgressIndicator({ entries, userId }: WeekProgressIndicator
 
       {/* Daily Status */}
       <div className="mt-3 grid grid-cols-7 gap-2">
-        {progress.dailyStatus.map((day, i) => (
-          <div
-            key={i}
-            className={`text-center py-2 rounded-lg text-xs font-medium transition-colors ${
-              day.filled
-                ? 'bg-green-500 dark:bg-green-600 text-white'
-                : 'bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500'
-            }`}
-            title={`${format(day.date, 'M/d')}: ${day.hours}h`}
-          >
-            {day.dayName}
-          </div>
-        ))}
+        {progress.dailyStatus.map((day, i) => {
+          // 決定顏色和樣式
+          let bgColor = 'bg-gray-100 dark:bg-gray-700';
+          let textColor = 'text-gray-400 dark:text-gray-500';
+          let titleText = `${format(day.date, 'M/d')}: ${day.hours}h`;
+
+          if (day.filled) {
+            if (day.isWorkday) {
+              // 工作日
+              if (day.isComplete) {
+                // 已達標
+                bgColor = 'bg-green-500 dark:bg-green-600';
+                textColor = 'text-white';
+                titleText += ' ✓';
+              } else {
+                // 未達標
+                bgColor = 'bg-orange-400 dark:bg-orange-500';
+                textColor = 'text-white';
+                titleText += ` (還差 ${day.shortfall}h)`;
+              }
+            } else {
+              // 周末
+              bgColor = 'bg-blue-400 dark:bg-blue-500';
+              textColor = 'text-white';
+            }
+          }
+
+          return (
+            <div
+              key={i}
+              className={`text-center py-2 rounded-lg text-xs font-medium transition-colors ${bgColor} ${textColor}`}
+              title={titleText}
+            >
+              <div>{day.dayName}</div>
+              {day.filled && (
+                <div className="text-[10px] mt-0.5 opacity-90">{day.hours}h</div>
+              )}
+            </div>
+          );
+        })}
       </div>
 
       {/* Hint */}
