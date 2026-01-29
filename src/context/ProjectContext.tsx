@@ -26,7 +26,29 @@ export const PROJECT_COLORS = [
   '#D97C7C', // 柔和紅
   '#5FB3C5', // 柔和青
   '#A8C66C', // 柔和黃綠
+  '#B8A4D5', // 柔和薰衣草
+  '#8DB8B0', // 柔和薄荷
+  '#E8B88A', // 柔和杏
+  '#A6A6C8', // 柔和藍紫
+  '#D5A4A4', // 柔和玫瑰
+  '#7EB3A8', // 柔和海綠
+  '#C9B47C', // 柔和卡其
+  '#9DBDC6', // 柔和天藍
 ];
+
+/**
+ * 取得目前已使用的顏色集合
+ * @param projects 專案列表
+ * @param excludeProjectId 排除的專案 ID（編輯專案時使用）
+ * @returns 已使用的顏色集合
+ */
+export function getUsedColors(projects: Project[], excludeProjectId?: string): Set<string> {
+  return new Set(
+    projects
+      .filter(p => p.is_active && p.id !== excludeProjectId)
+      .map(p => p.color)
+  );
+}
 
 export function ProjectProvider({ children }: { children: ReactNode }) {
   const [projects, setProjects] = useState<Project[]>([]);

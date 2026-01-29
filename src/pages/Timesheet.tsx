@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useTimeEntries } from '../context/TimeEntryContext';
-import { useProjects, PROJECT_COLORS } from '../context/ProjectContext';
+import { useProjects, PROJECT_COLORS, getUsedColors } from '../context/ProjectContext';
 import { Navigate } from 'react-router-dom';
 import { Modal } from '../components/ui';
 import { Button } from '../components/ui';
@@ -190,6 +190,10 @@ export function Timesheet() {
   };
 
   const totalHours = entries.reduce((sum, e) => sum + (e.hours || 0), 0);
+
+  // 計算已使用的顏色
+  const usedColors = getUsedColors(projects);
+  const usedColorsInEdit = editingProject ? getUsedColors(projects, editingProject) : usedColors;
 
   return (
     <div className="max-w-3xl mx-auto">
@@ -383,16 +387,23 @@ export function Timesheet() {
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">選擇顏色</label>
-            <div className="flex gap-2 flex-wrap">
-              {PROJECT_COLORS.map(color => (
-                <button
-                  key={color}
-                  type="button"
-                  onClick={() => setNewProjectColor(color)}
-                  className={`w-8 h-8 rounded-full ${newProjectColor === color ? 'ring-2 ring-offset-2 ring-blue-500' : ''}`}
-                  style={{ backgroundColor: color }}
-                />
-              ))}
+            <div className="grid grid-cols-8 gap-2">
+              {PROJECT_COLORS.map(color => {
+                const isUsed = usedColors.has(color);
+                return (
+                  <button
+                    key={color}
+                    type="button"
+                    onClick={() => !isUsed && setNewProjectColor(color)}
+                    disabled={isUsed}
+                    className={`w-8 h-8 rounded-full transition-all ${
+                      newProjectColor === color ? 'ring-2 ring-offset-2 ring-blue-500 dark:ring-offset-gray-800' : ''
+                    } ${isUsed ? 'opacity-30 cursor-not-allowed' : 'hover:scale-110'}`}
+                    style={{ backgroundColor: color }}
+                    title={isUsed ? '此顏色已被使用' : ''}
+                  />
+                );
+              })}
             </div>
           </div>
           <div className="flex gap-3 pt-4">
@@ -496,16 +507,23 @@ export function Timesheet() {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">選擇顏色</label>
-              <div className="flex gap-2 flex-wrap">
-                {PROJECT_COLORS.map(color => (
-                  <button
-                    key={color}
-                    type="button"
-                    onClick={() => setEditProjectColor(color)}
-                    className={`w-8 h-8 rounded-full ${editProjectColor === color ? 'ring-2 ring-offset-2 ring-blue-500' : ''}`}
-                    style={{ backgroundColor: color }}
-                  />
-                ))}
+              <div className="grid grid-cols-8 gap-2">
+                {PROJECT_COLORS.map(color => {
+                  const isUsed = usedColorsInEdit.has(color);
+                  return (
+                    <button
+                      key={color}
+                      type="button"
+                      onClick={() => !isUsed && setEditProjectColor(color)}
+                      disabled={isUsed}
+                      className={`w-8 h-8 rounded-full transition-all ${
+                        editProjectColor === color ? 'ring-2 ring-offset-2 ring-blue-500 dark:ring-offset-gray-800' : ''
+                      } ${isUsed ? 'opacity-30 cursor-not-allowed' : 'hover:scale-110'}`}
+                      style={{ backgroundColor: color }}
+                      title={isUsed ? '此顏色已被使用' : ''}
+                    />
+                  );
+                })}
               </div>
             </div>
             <div className="flex gap-3 pt-4">

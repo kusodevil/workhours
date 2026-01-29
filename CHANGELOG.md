@@ -5,6 +5,43 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2026-01-29
+
+### Added
+- 👥 **管理者功能增強**
+  - 管理者可建立新使用者帳號（支援 username 和 password）
+  - 管理者可刪除使用者帳號
+  - 使用者可使用 username 或 email 登入系統
+- 🎨 **專案顏色管理增強**
+  - 專案顏色選項從 8 色擴充至 16 色（兩排顏色選擇）
+  - 新增顏色使用追蹤功能，已使用的顏色會自動反灰並禁用
+  - 專案刪除或變更顏色時，自動釋放顏色供其他專案使用
+  - 編輯專案時，當前專案的顏色保持可選（不會被標記為已使用）
+- 🔌 **Notion API 整合準備**
+  - 新增 Notion API Edge Function (`notion-query`)
+  - 完整的認證與 CORS 處理
+  - 錯誤處理與日誌記錄
+  - 測試頁面 (`/notion-test`)
+
+### Fixed
+- ✅ **表單驗證統一**
+  - 統一所有表單的錯誤訊息風格為紅色警告框
+  - 移除瀏覽器原生的橘色 tooltip 驗證
+  - 改進使用者體驗的一致性
+  - 修正「新增使用者」Modal 背景全黑問題
+- 📱 **手機版優化**
+  - 新增手機版響應式導航選單
+  - 改善小螢幕裝置的使用體驗
+
+### Changed
+- 🔧 **部署流程改進**
+  - 設定 Vercel Git Integration，支援自動部署
+  - 更新開發規範，CLI 手動部署僅用於緊急情況
+
+### Documentation
+- 📝 更新 CONTRIBUTING.md 新增 UI 元件與表單驗證規範
+- 📝 更新開發流程文件
+
 ## [1.0.3] - 2026-01-27
 
 ### Changed
@@ -82,6 +119,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 使用者只能查看/編輯自己的工時紀錄
 - Storage 頭像上傳安全策略
 
+[1.2.0]: https://github.com/kusodevil/workhours/releases/tag/v1.2.0
 [1.0.3]: https://github.com/kusodevil/workhours/releases/tag/v1.0.3
 [1.0.2]: https://github.com/kusodevil/workhours/releases/tag/v1.0.2
 [1.0.1]: https://github.com/kusodevil/workhours/releases/tag/v1.0.1
