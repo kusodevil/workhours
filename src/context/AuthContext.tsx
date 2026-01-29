@@ -3,13 +3,17 @@ import type { ReactNode } from 'react';
 import type { User } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 import { invokeEdgeFunction } from '../lib/edge-functions';
-import type { Profile } from '../types/database';
+import type { Profile, UserRole } from '../types/database';
 
 interface AuthContextType {
   user: User | null;
   profile: Profile | null;
   isAuthenticated: boolean;
-  isAdmin: boolean;
+  isAdmin: boolean; // Deprecated: Use role instead
+  role: UserRole;
+  departmentId: string | null;
+  isSuperAdmin: boolean;
+  isDepartmentAdmin: boolean;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<{ error: string | null }>;
   logout: () => Promise<void>;
@@ -150,13 +154,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { error: null };
   };
 
+  const role = profile?.role ?? 'member';
+  const departmentId = profile?.department_id ?? null;
+  const isSuperAdmin = role === 'super_admin';
+  const isDepartmentAdmin = role === 'department_admin';
+  const isAdmin = profile?.is_admin ?? false; // Backward compatibility
+
   return (
     <AuthContext.Provider
       value={{
         user,
         profile,
         isAuthenticated: !!user,
-        isAdmin: profile?.is_admin ?? false,
+        isAdmin,
+        role,
+        departmentId,
+        isSuperAdmin,
+        isDepartmentAdmin,
         isLoading,
         login,
         logout,
