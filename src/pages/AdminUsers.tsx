@@ -106,6 +106,31 @@ export function AdminUsers() {
     setUpdatingUserId(null);
   };
 
+  const updateUserDepartment = async (userId: string, newDepartmentId: string) => {
+    // Department Admin 只能將使用者分配到自己的部門
+    if (!isSuperAdmin && departmentId !== newDepartmentId) {
+      setToast({ message: '權限不足：只能將使用者分配到您的部門', type: 'error' });
+      return;
+    }
+
+    setUpdatingUserId(userId);
+
+    const { error: updateError } = await supabase
+      .from('profiles')
+      .update({ department_id: newDepartmentId })
+      .eq('id', userId);
+
+    if (updateError) {
+      setToast({ message: `更新失敗：${updateError.message}`, type: 'error' });
+    } else {
+      setToast({ message: '部門已更新', type: 'success' });
+      // 重新載入用戶列表以確保資料一致
+      await fetchUsers();
+    }
+
+    setUpdatingUserId(null);
+  };
+
   // 根據選定用戶和時間範圍過濾時數記錄
   const getUserEntries = (userId: string) => {
     const userEntries = timeEntries.filter(e => e.user_id === userId);
@@ -340,6 +365,20 @@ export function AdminUsers() {
                       <option value="member">一般成員</option>
                       <option value="department_admin">部門管理員</option>
                       {isSuperAdmin && <option value="super_admin">超級管理員</option>}
+                    </select>
+                    <select
+                      value={user.department_id || ''}
+                      onChange={(e) => updateUserDepartment(user.id, e.target.value)}
+                      disabled={updatingUserId === user.id || (!isSuperAdmin) || user.id === profile?.id}
+                      className="px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                      title={user.id === profile?.id ? '不能修改自己的部門' : '選擇部門'}
+                    >
+                      <option value="">未分配部門</option>
+                      {departments.map(dept => (
+                        <option key={dept.id} value={dept.id}>
+                          {dept.name}
+                        </option>
+                      ))}
                     </select>
                     <button
                       onClick={() => setDeletingUser({ id: user.id, name: user.username })}

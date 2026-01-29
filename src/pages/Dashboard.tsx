@@ -73,7 +73,14 @@ export function Dashboard() {
       }
     });
 
-    return Object.values(stats).sort((a, b) => b.hours - a.hours);
+    const statsArray = Object.values(stats);
+    const total = statsArray.reduce((sum, stat) => sum + stat.hours, 0);
+
+    // Add percent field to each stat
+    return statsArray.map(stat => ({
+      ...stat,
+      percent: total > 0 ? stat.hours / total : 0
+    })).sort((a, b) => b.hours - a.hours);
   }, [weekEntries, projects]);
 
   // Daily breakdown for bar chart
@@ -106,6 +113,13 @@ export function Dashboard() {
   // Fetch departments and profiles
   useEffect(() => {
     const fetchData = async () => {
+      // 如果不是 Super Admin 但 departmentId 還沒載入，先不載入資料
+      // 避免閃現其他部門的資料
+      if (!isSuperAdmin && !departmentId) {
+        console.log('[Dashboard] Waiting for departmentId to load...');
+        return;
+      }
+
       // Fetch departments
       const { data: deptData, error: deptError } = await supabase
         .from('departments')
@@ -166,7 +180,14 @@ export function Dashboard() {
 
   const activeProjects = projects.filter(p => p.is_active);
   const totalHours = weekEntries.reduce((sum, e) => sum + e.hours, 0);
-  const avgHoursPerDay = totalHours / 7;
+
+  // Calculate average hours per day per person who actually logged time
+  // Count unique (user_id, date) combinations to get total person-days
+  const personDays = new Set(
+    weekEntries.map(entry => `${entry.user_id}_${entry.date}`)
+  ).size;
+
+  const avgHoursPerDay = personDays > 0 ? totalHours / personDays : 0;
 
   // Get current department name
   const currentDepartmentName = useMemo(() => {
@@ -176,7 +197,7 @@ export function Dashboard() {
 
     const deptId = isSuperAdmin ? selectedDepartment : departmentId;
     const dept = departments.find(d => d.id === deptId);
-    return dept?.name || 'QA Team';
+    return dept?.name || '載入中...';
   }, [isSuperAdmin, selectedDepartment, departmentId, departments]);
 
   return (
@@ -251,6 +272,7 @@ export function Dashboard() {
                       backgroundColor: effectiveTheme === 'dark' ? 'rgba(31, 41, 55, 0.98)' : 'rgba(255, 255, 255, 0.98)',
                       border: effectiveTheme === 'dark' ? '1px solid #374151' : '1px solid #e5e7eb',
                       borderRadius: '8px',
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
                       color: effectiveTheme === 'dark' ? '#f3f4f6' : '#111827'
                     }}
                     itemStyle={{
@@ -291,20 +313,48 @@ export function Dashboard() {
                     cx="50%"
                     cy="50%"
                     innerRadius={60}
-                    outerRadius={85}
+                    outerRadius={80}
                     paddingAngle={2}
                     dataKey="hours"
-                    label={({ name, percent }) => `${name} ${((percent ?? 0) * 100).toFixed(0)}%`}
+                    label={({ cx, cy, midAngle, outerRadius, name, percent }: any) => {
+                      if (!cx || !cy || midAngle === undefined || !outerRadius) return null;
+
+                      const RADIAN = Math.PI / 180;
+                      const radius = outerRadius + 25;
+                      const x = cx + radius * Math.cos(-midAngle * RADIAN);
+                      const y = cy + radius * Math.sin(-midAngle * RADIAN);
+                      const percentage = ((percent ?? 0) * 100).toFixed(0);
+
+                      return (
+                        <text
+                          x={x}
+                          y={y}
+                          fill={effectiveTheme === 'dark' ? '#f3f4f6' : '#111827'}
+                          textAnchor={x > cx ? 'start' : 'end'}
+                          dominantBaseline="central"
+                          fontSize="13"
+                        >
+                          {`${name} ${percentage}%`}
+                        </text>
+                      );
+                    }}
+                    labelLine={false}
                   >
                     {projectStats.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={entry.color} />
                     ))}
                   </Pie>
                   <Tooltip
+                    formatter={(value: number | undefined, name: string | undefined, props: any) => {
+                      const hours = value ?? 0;
+                      const percent = props.payload?.percent ?? 0;
+                      return [`${(percent * 100).toFixed(1)}% (${hours} 小時)`, name ?? ''];
+                    }}
                     contentStyle={{
                       backgroundColor: effectiveTheme === 'dark' ? 'rgba(31, 41, 55, 0.98)' : 'rgba(255, 255, 255, 0.98)',
                       border: effectiveTheme === 'dark' ? '1px solid #374151' : '1px solid #e5e7eb',
                       borderRadius: '8px',
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
                       color: effectiveTheme === 'dark' ? '#f3f4f6' : '#111827'
                     }}
                     itemStyle={{
@@ -313,6 +363,11 @@ export function Dashboard() {
                     labelStyle={{
                       color: effectiveTheme === 'dark' ? '#f3f4f6' : '#111827'
                     }}
+                    wrapperStyle={{
+                      outline: 'none',
+                      zIndex: 1000
+                    }}
+                    cursor={false}
                   />
                 </PieChart>
               </ResponsiveContainer>
@@ -403,6 +458,7 @@ export function Dashboard() {
                     backgroundColor: effectiveTheme === 'dark' ? 'rgba(31, 41, 55, 0.98)' : 'rgba(255, 255, 255, 0.98)',
                     border: effectiveTheme === 'dark' ? '1px solid #374151' : '1px solid #e5e7eb',
                     borderRadius: '8px',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
                     color: effectiveTheme === 'dark' ? '#f3f4f6' : '#111827'
                   }}
                   itemStyle={{
@@ -411,6 +467,11 @@ export function Dashboard() {
                   labelStyle={{
                     color: effectiveTheme === 'dark' ? '#f3f4f6' : '#111827'
                   }}
+                  wrapperStyle={{
+                    outline: 'none',
+                    zIndex: 1000
+                  }}
+                  cursor={false}
                 />
                 <Legend wrapperStyle={{ paddingTop: '15px' }} />
                 {activeProjects.map(project => (

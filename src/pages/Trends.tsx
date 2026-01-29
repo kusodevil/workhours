@@ -1,16 +1,89 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar } from 'recharts';
 import { useTimeEntries } from '../context/TimeEntryContext';
 import { useProjects } from '../context/ProjectContext';
 import { useTheme } from '../context/ThemeContext';
+import { useAuth } from '../context/AuthContext';
+import { supabase } from '../lib/supabase';
 import { format, startOfWeek, subWeeks } from 'date-fns';
+import type { Department } from '../types/database';
 
 export function Trends() {
-  const { timeEntries } = useTimeEntries();
+  const { timeEntries: allTimeEntries } = useTimeEntries();
   const { projects } = useProjects();
   const { effectiveTheme } = useTheme();
+  const { profile, isSuperAdmin, isDepartmentAdmin } = useAuth();
   const [selectedProject, setSelectedProject] = useState<string>('all');
   const [timeRange, setTimeRange] = useState<'1month' | '3months'>('1month');
+  const [selectedDepartment, setSelectedDepartment] = useState<string>('all');
+  const [departments, setDepartments] = useState<Department[]>([]);
+  const [departmentUserIds, setDepartmentUserIds] = useState<string[]>([]);
+
+  // Fetch departments for super admin
+  useEffect(() => {
+    const fetchDepartments = async () => {
+      if (isSuperAdmin) {
+        const { data } = await supabase
+          .from('departments')
+          .select('*')
+          .eq('is_active', true)
+          .order('name');
+
+        if (data) {
+          setDepartments(data);
+        }
+      }
+    };
+
+    fetchDepartments();
+  }, [isSuperAdmin]);
+
+  // Fetch user IDs for the selected department (super admin) or current department (dept admin)
+  useEffect(() => {
+    const fetchDepartmentUsers = async () => {
+      let targetDepartmentId: string | null = null;
+
+      if (isSuperAdmin && selectedDepartment !== 'all') {
+        targetDepartmentId = selectedDepartment;
+      } else if (isDepartmentAdmin && profile?.department_id) {
+        targetDepartmentId = profile.department_id;
+      }
+
+      if (targetDepartmentId) {
+        const { data } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('department_id', targetDepartmentId);
+
+        if (data) {
+          setDepartmentUserIds(data.map(p => p.id));
+        }
+      } else {
+        setDepartmentUserIds([]);
+      }
+    };
+
+    fetchDepartmentUsers();
+  }, [isSuperAdmin, isDepartmentAdmin, selectedDepartment, profile?.department_id]);
+
+  // Filter time entries based on user role and department selection
+  const timeEntries = useMemo(() => {
+    if (isSuperAdmin) {
+      // Super admin: filter by selected department
+      if (selectedDepartment === 'all') {
+        return allTimeEntries;
+      }
+      // Filter by users in the selected department
+      return allTimeEntries.filter(entry => departmentUserIds.includes(entry.user_id));
+    } else if (isDepartmentAdmin && profile?.department_id) {
+      // Department admin: only their department's entries
+      return allTimeEntries.filter(entry => departmentUserIds.includes(entry.user_id));
+    } else if (profile?.id) {
+      // Regular user: only their own entries
+      return allTimeEntries.filter(entry => entry.user_id === profile.id);
+    }
+    return allTimeEntries;
+  }, [allTimeEntries, isSuperAdmin, isDepartmentAdmin, selectedDepartment, profile, departmentUserIds]);
 
   const activeProjects = projects.filter(p => p.is_active);
 
@@ -148,9 +221,27 @@ export function Trends() {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">趨勢分析</h1>
-          <p className="text-gray-500 dark:text-gray-400 mt-1">追蹤工時分配的變化趨勢</p>
+          <p className="text-gray-500 dark:text-gray-400 mt-1">
+            {isSuperAdmin
+              ? '追蹤全公司或特定部門的工時分配變化趨勢'
+              : isDepartmentAdmin
+              ? '追蹤部門工時分配的變化趨勢'
+              : '追蹤您的工時分配變化趨勢'}
+          </p>
         </div>
-        <div className="flex gap-3">
+        <div className="flex gap-3 flex-wrap">
+          {isSuperAdmin && (
+            <select
+              value={selectedDepartment}
+              onChange={e => setSelectedDepartment(e.target.value)}
+              className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none"
+            >
+              <option value="all">全公司</option>
+              {departments.map(dept => (
+                <option key={dept.id} value={dept.id}>{dept.name}</option>
+              ))}
+            </select>
+          )}
           <select
             value={timeRange}
             onChange={e => setTimeRange(e.target.value as '1month' | '3months')}

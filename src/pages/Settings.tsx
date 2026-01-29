@@ -1,9 +1,10 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
 import { Button } from '../components/ui';
 import { ThemeToggle } from '../components/ThemeToggle';
+import type { Department } from '../types/database';
 
 export function Settings() {
   const { isAuthenticated, isLoading: authLoading, profile, user } = useAuth();
@@ -11,7 +12,27 @@ export function Settings() {
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [department, setDepartment] = useState<Department | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Fetch department information
+  useEffect(() => {
+    const fetchDepartment = async () => {
+      if (profile?.department_id) {
+        const { data } = await supabase
+          .from('departments')
+          .select('*')
+          .eq('id', profile.department_id)
+          .single();
+
+        if (data) {
+          setDepartment(data);
+        }
+      }
+    };
+
+    fetchDepartment();
+  }, [profile?.department_id]);
 
   if (authLoading) {
     return <div className="flex justify-center py-12 text-gray-900 dark:text-gray-100">載入中...</div>;
@@ -207,6 +228,21 @@ export function Settings() {
           <div>
             <p className="text-sm text-gray-500 dark:text-gray-400">Email</p>
             <p className="text-gray-900 dark:text-gray-100">{user.email}</p>
+          </div>
+          <div>
+            <p className="text-sm text-gray-500 dark:text-gray-400">部門</p>
+            <p className="text-gray-900 dark:text-gray-100">
+              {department ? (
+                <span>
+                  {department.name}
+                  <span className="ml-2 text-xs font-mono text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded">
+                    {department.code}
+                  </span>
+                </span>
+              ) : (
+                <span className="text-gray-400 dark:text-gray-500">未分配部門</span>
+              )}
+            </p>
           </div>
           <div>
             <p className="text-sm text-gray-500 dark:text-gray-400">帳號建立時間</p>

@@ -17,7 +17,7 @@ interface AuthContextType {
   isLoading: boolean;
   login: (email: string, password: string) => Promise<{ error: string | null }>;
   logout: () => Promise<void>;
-  register: (username: string, email: string, password: string) => Promise<{ error: string | null }>;
+  register: (username: string, email: string, password: string, departmentId: string) => Promise<{ error: string | null }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -133,20 +133,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setProfile(null);
   };
 
-  const register = async (username: string, email: string, password: string): Promise<{ error: string | null }> => {
-    const { error } = await supabase.auth.signUp({
+  const register = async (
+    username: string,
+    email: string,
+    password: string,
+    departmentId: string
+  ): Promise<{ error: string | null }> => {
+    // 先創建 Auth 用戶
+    const { data: authData, error: authError } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        data: {
-          username,
-        },
+        data: { username },
         emailRedirectTo: undefined,
       },
     });
 
-    if (error) {
-      return { error: error.message };
+    if (authError) {
+      return { error: authError.message };
+    }
+
+    // 手動更新 department_id（因為可能沒有自動觸發器）
+    if (authData.user) {
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update({ department_id: departmentId })
+        .eq('id', authData.user.id);
+
+      if (profileError) {
+        console.error('Failed to update department:', profileError);
+        // 不返回錯誤，因為用戶已創建，管理員可以後續分配部門
+      }
     }
 
     // 註冊成功後會自動登入（session 自動儲存在 localStorage）

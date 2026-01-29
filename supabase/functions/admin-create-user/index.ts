@@ -207,34 +207,39 @@ serve(async (req) => {
     // 等待一下讓 trigger 先創建 profile（如果有的話）
     await new Promise(resolve => setTimeout(resolve, 500));
 
-    // 使用 upsert 確保 profiles 表記錄存在，並設置 username、department_id 和 role
-    console.log('[admin-create-user] Upserting profile with username, department, and role');
-    const { data: upsertedProfile, error: profileUpsertError } = await supabaseAdmin
+    // 更新 profile 設置 username、department_id 和 role
+    console.log('[admin-create-user] Updating profile with username, department, and role');
+    const { data: updatedProfile, error: profileUpdateError } = await supabaseAdmin
       .from('profiles')
-      .upsert({
-        id: newUser.user.id,
+      .update({
         username: username,
         email: internalEmail,
         department_id: department_id,
         role: role,
         is_admin: false // 保留向後相容
-      }, {
-        onConflict: 'id'
       })
+      .eq('id', newUser.user.id)
       .select()
       .single();
 
-    if (profileUpsertError) {
-      console.error('[admin-create-user] Error upserting profile:', profileUpsertError);
-      // 不要因為這個失敗而返回錯誤，用戶已經創建成功了
-    } else {
-      console.log('[admin-create-user] Profile upserted successfully:', upsertedProfile);
+    if (profileUpdateError) {
+      console.error('[admin-create-user] Error updating profile:', profileUpdateError);
+      console.error('[admin-create-user] Error details:', JSON.stringify(profileUpdateError));
+      return new Response(
+        JSON.stringify({ error: `建立使用者成功，但設定部門和角色失敗：${profileUpdateError.message}` }),
+        {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
     }
 
-    // 驗證 username 是否真的被寫入
+    console.log('[admin-create-user] Profile updated successfully:', updatedProfile);
+
+    // 驗證所有欄位是否正確寫入
     const { data: verifyProfile, error: verifyError } = await supabaseAdmin
       .from('profiles')
-      .select('username, email')
+      .select('username, email, department_id, role')
       .eq('id', newUser.user.id)
       .single();
 

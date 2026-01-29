@@ -11,13 +11,17 @@ interface NavItem {
   label: string;
   public: boolean;
   adminOnly?: boolean;
+  superAdminOnly?: boolean;
 }
 
 export function Layout({ children }: LayoutProps) {
-  const { profile, isAuthenticated, isAdmin, logout } = useAuth();
+  const { profile, isAuthenticated, isSuperAdmin, isDepartmentAdmin, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  // 管理者包含超級管理員和部門管理員
+  const isAdmin = isSuperAdmin || isDepartmentAdmin;
 
   const handleLogout = () => {
     logout();
@@ -30,6 +34,7 @@ export function Layout({ children }: LayoutProps) {
     { path: '/my-records', label: '我的紀錄', public: false },
     { path: '/trends', label: '趨勢分析', public: false },
     { path: '/admin/users', label: '管理帳號', public: false, adminOnly: true },
+    { path: '/admin/departments', label: '管理部門', public: false, adminOnly: true, superAdminOnly: true },
   ];
 
   return (
@@ -45,7 +50,7 @@ export function Layout({ children }: LayoutProps) {
               {/* Desktop Navigation */}
               <nav className="hidden md:flex gap-1">
                 {navItems.map(item => {
-                  const shouldShow = (item.public || isAuthenticated) && (!item.adminOnly || isAdmin);
+                  const shouldShow = (item.public || isAuthenticated) && (!item.adminOnly || isAdmin) && (!item.superAdminOnly || isSuperAdmin);
                   return shouldShow && (
                     <Link
                       key={item.path}
@@ -153,7 +158,7 @@ export function Layout({ children }: LayoutProps) {
             <div className="md:hidden py-4 border-t border-gray-200 dark:border-gray-700">
               <nav className="flex flex-col gap-2">
                 {navItems.map(item => {
-                  const shouldShow = (item.public || isAuthenticated) && (!item.adminOnly || isAdmin);
+                  const shouldShow = (item.public || isAuthenticated) && (!item.adminOnly || isAdmin) && (!item.superAdminOnly || isSuperAdmin);
                   return shouldShow && (
                     <Link
                       key={item.path}
