@@ -87,7 +87,7 @@ export function MyRecords() {
         const date = new Date(dateStr);
         const totalHours = entries.reduce((sum, e) => sum + e.hours, 0);
         const isWorkday = !isWeekend(date); // 判斷是否為工作日
-        const hoursNeeded = isWorkday ? 8 : 0; // 工作日目標 8 小時
+        const hoursNeeded = isWorkday ? 7 : 0; // 工作日目標 7 小時
         const shortfall = isWorkday ? Math.max(0, hoursNeeded - totalHours) : 0; // 還差多少小時
 
         return {
@@ -212,18 +212,18 @@ export function MyRecords() {
                 <div className="flex items-center gap-3">
                   <span className={`text-sm font-medium ${
                     day.isWorkday
-                      ? day.totalHours >= 8
+                      ? day.totalHours >= 7
                         ? 'text-green-600 dark:text-green-400'
                         : 'text-orange-600 dark:text-orange-400'
                       : 'text-blue-600 dark:text-blue-400'
                   }`}>
                     {day.totalHours} 小時
-                    {day.isWorkday && day.totalHours < 8 && (
+                    {day.isWorkday && day.totalHours < 7 && (
                       <span className="ml-2 text-xs text-gray-500 dark:text-gray-400">
                         (還差 {day.shortfall} 小時)
                       </span>
                     )}
-                    {day.isWorkday && day.totalHours >= 8 && (
+                    {day.isWorkday && day.totalHours >= 7 && (
                       <span className="ml-2">✓</span>
                     )}
                   </span>

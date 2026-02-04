@@ -13,7 +13,7 @@ interface AdminAddTimeEntryModalProps {
 
 export function AdminAddTimeEntryModal({ isOpen, onClose, onSubmit, projects, userName }: AdminAddTimeEntryModalProps) {
   const [projectId, setProjectId] = useState('');
-  const [hours, setHours] = useState(8);
+  const [hours, setHours] = useState(7);
   const [date, setDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [note, setNote] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -57,7 +57,7 @@ export function AdminAddTimeEntryModal({ isOpen, onClose, onSubmit, projects, us
 
     // 重置表單
     setProjectId('');
-    setHours(8);
+    setHours(7);
     setDate(format(new Date(), 'yyyy-MM-dd'));
     setNote('');
     setProjectError('');

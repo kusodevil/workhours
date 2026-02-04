@@ -41,8 +41,8 @@ export function useWeekProgress(
       );
       const hours = dayEntries.reduce((sum, e) => sum + e.hours, 0);
       const isWorkday = !isWeekend(day); // 判斷是否為工作日
-      const isComplete = isWorkday ? hours >= 8 : hours > 0; // 工作日需達 8 小時，周末有填就算完成
-      const shortfall = isWorkday ? Math.max(0, 8 - hours) : 0; // 還差多少小時
+      const isComplete = isWorkday ? hours >= 7 : hours > 0; // 工作日需達 7 小時，周末有填就算完成
+      const shortfall = isWorkday ? Math.max(0, 7 - hours) : 0; // 還差多少小時
 
       return {
         date: day,

@@ -20,7 +20,7 @@ interface BatchFillModalProps {
 
 export function BatchFillModal({ isOpen, onClose, onAddToForm, projects }: BatchFillModalProps) {
   const [projectId, setProjectId] = useState('');
-  const [hours, setHours] = useState(8);
+  const [hours, setHours] = useState(7);
   const [selectedDays, setSelectedDays] = useState<string[]>([]);
   const [note, setNote] = useState('');
 
@@ -63,7 +63,7 @@ export function BatchFillModal({ isOpen, onClose, onAddToForm, projects }: Batch
 
     // 重置表單
     setProjectId('');
-    setHours(8);
+    setHours(7);
     setSelectedDays([]);
     setNote('');
   };
