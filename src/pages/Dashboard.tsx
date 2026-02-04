@@ -5,6 +5,7 @@ import { useProjects } from '../context/ProjectContext';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { supabase } from '../lib/supabase';
+import { DepartmentExportButton } from '../components/DepartmentExportButton';
 import type { Profile, Department } from '../types/database';
 
 export function Dashboard() {
@@ -208,34 +209,45 @@ export function Dashboard() {
           <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{currentDepartmentName} 的工時總覽</h1>
           <p className="text-gray-500 dark:text-gray-400 mt-1">查看團隊工時分配狀況</p>
         </div>
-        <div className="flex gap-3">
-          {/* Department Selector (Super Admin only) */}
-          {isSuperAdmin && (
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div className="flex gap-3">
+            {/* Department Selector (Super Admin only) */}
+            {isSuperAdmin && (
+              <select
+                value={selectedDepartment}
+                onChange={e => setSelectedDepartment(e.target.value)}
+                className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none"
+              >
+                <option value="all">全公司</option>
+                {departments.map(dept => (
+                  <option key={dept.id} value={dept.id}>
+                    {dept.name}
+                  </option>
+                ))}
+              </select>
+            )}
+            {/* Week Selector */}
             <select
-              value={selectedDepartment}
-              onChange={e => setSelectedDepartment(e.target.value)}
+              value={selectedWeek}
+              onChange={e => setSelectedWeek(Number(e.target.value))}
               className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none"
             >
-              <option value="all">全公司</option>
-              {departments.map(dept => (
-                <option key={dept.id} value={dept.id}>
-                  {dept.name}
+              {weekOptions.map(opt => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.value === 0 ? '本週 ' : ''}{opt.label}
                 </option>
               ))}
             </select>
+          </div>
+          {/* Department Export Button (Admins only, when viewing a specific department) */}
+          {(isSuperAdmin || departmentId) && selectedDepartment !== 'all' && profiles.length > 0 && (
+            <DepartmentExportButton
+              entries={weekEntries}
+              projects={projects}
+              profiles={profiles}
+              departmentName={currentDepartmentName}
+            />
           )}
-          {/* Week Selector */}
-          <select
-            value={selectedWeek}
-            onChange={e => setSelectedWeek(Number(e.target.value))}
-            className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none"
-          >
-            {weekOptions.map(opt => (
-              <option key={opt.value} value={opt.value}>
-                {opt.value === 0 ? '本週 ' : ''}{opt.label}
-              </option>
-            ))}
-          </select>
         </div>
       </div>
 
