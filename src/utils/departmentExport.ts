@@ -58,7 +58,7 @@ function groupEntriesByUser(entries: TimeEntry[], profiles: Profile[]): UserTime
 }
 
 /**
- * 匯出部門週報 PDF
+ * 匯出部門週報/月報 PDF
  */
 export async function exportDepartmentWeeklyReportPDF(
   entries: TimeEntry[],
@@ -66,7 +66,8 @@ export async function exportDepartmentWeeklyReportPDF(
   profiles: Profile[],
   weekStart: Date,
   weekEnd: Date,
-  departmentName: string
+  departmentName: string,
+  reportType: 'week' | 'month' = 'week'
 ): Promise<void> {
   const doc = new jsPDF();
 
@@ -78,7 +79,8 @@ export async function exportDepartmentWeeklyReportPDF(
 
   // 標題
   doc.setFontSize(18);
-  doc.text(`${departmentName} - 工時週報`, 105, 20, { align: 'center' });
+  const reportTitle = reportType === 'week' ? '工時週報' : '工時月報';
+  doc.text(`${departmentName} - ${reportTitle}`, 105, 20, { align: 'center' });
 
   doc.setFontSize(10);
   doc.text(`期間：${format(weekStart, 'yyyy/MM/dd')} - ${format(weekEnd, 'yyyy/MM/dd')}`, 105, 30, { align: 'center' });
@@ -136,7 +138,8 @@ export async function exportDepartmentWeeklyReportPDF(
     headStyles: {
       fillColor: [59, 130, 246],
       textColor: [255, 255, 255],
-      fontStyle: 'bold'
+      fontStyle: 'bold',
+      font: 'NotoSansTC'
     },
     columnStyles: {
       0: { cellWidth: 60, halign: 'left' },
@@ -189,7 +192,8 @@ export async function exportDepartmentWeeklyReportPDF(
         headStyles: {
           fillColor: [229, 231, 235],
           textColor: [0, 0, 0],
-          fontStyle: 'bold'
+          fontStyle: 'bold',
+          font: 'NotoSansTC'
         },
         margin: { left: 20 }
       });
@@ -199,7 +203,8 @@ export async function exportDepartmentWeeklyReportPDF(
   }
 
   // 下載
-  const fileName = `${departmentName}_工時週報_${format(weekStart, 'yyyy-MM-dd')}.pdf`;
+  const reportLabel = reportType === 'week' ? '工時週報' : '工時月報';
+  const fileName = `${departmentName}_${reportLabel}_${format(weekStart, 'yyyy-MM-dd')}.pdf`;
   doc.save(fileName);
 }
 

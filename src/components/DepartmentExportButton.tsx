@@ -76,7 +76,7 @@ export function DepartmentExportButton({ entries, projects, profiles, department
         );
 
         if (exportFormat === 'pdf') {
-          await exportDepartmentWeeklyReportPDF(monthEntries, projects, profiles, start, end, departmentName);
+          await exportDepartmentWeeklyReportPDF(monthEntries, projects, profiles, start, end, departmentName, 'month');
         } else if (exportFormat === 'csv') {
           exportDepartmentCSV(monthEntries, projects, profiles, start, end, departmentName);
         }
