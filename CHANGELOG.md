@@ -5,6 +5,33 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.0] - 2026-02-04
+
+### Added
+- 📊 **部門工時匯出功能**
+  - 管理者可匯出特定部門的工時報表（週報/月報）
+  - 支援 PDF 格式：包含統計摘要、成員明細與每日工時詳情
+  - 支援 CSV 格式：適合 Excel 分析，包含所有成員工時記錄
+  - 只在查看特定部門時顯示匯出按鈕
+- 🏢 **全公司工時匯出功能**
+  - Super Admin 可匯出全公司所有部門的工時報表
+  - PDF 包含：全公司統計摘要、各部門統計、各部門詳細資料
+  - CSV 包含：所有部門成員的工時記錄與統計彙總
+  - 在查看「全公司」時顯示匯出按鈕
+
+### Fixed
+- 🔧 **PDF 中文字體顯示修正**
+  - 修正部門匯出 PDF 中表格標題的中文亂碼問題
+  - 移除 `fontStyle: 'bold'` 避免字體回退至不支援中文的預設字體
+  - 確保所有文字（標題、表格、內容）正確顯示中文
+- 📝 **月報標題修正**
+  - 修正部門月報 PDF 標題錯誤顯示為「週報」的問題
+  - 新增 `reportType` 參數正確區分週報和月報
+  - 檔案名稱也會根據報表類型正確命名
+- 🎨 **排版優化**
+  - 改善 PDF 報表中「期間」和「匯出時間」的排版
+  - 在冒號後增加空格，提升可讀性
+
 ## [1.2.1] - 2026-01-29
 
 ### Added

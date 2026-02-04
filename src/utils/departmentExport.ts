@@ -83,8 +83,8 @@ export async function exportDepartmentWeeklyReportPDF(
   doc.text(`${departmentName} - ${reportTitle}`, 105, 20, { align: 'center' });
 
   doc.setFontSize(10);
-  doc.text(`期間：${format(weekStart, 'yyyy/MM/dd')} - ${format(weekEnd, 'yyyy/MM/dd')}`, 105, 30, { align: 'center' });
-  doc.text(`匯出時間：${format(new Date(), 'yyyy/MM/dd HH:mm')}`, 105, 36, { align: 'center' });
+  doc.text(`期間： ${format(weekStart, 'yyyy/MM/dd')} - ${format(weekEnd, 'yyyy/MM/dd')}`, 105, 30, { align: 'center' });
+  doc.text(`匯出時間： ${format(new Date(), 'yyyy/MM/dd HH:mm')}`, 105, 36, { align: 'center' });
 
   // 統計摘要
   doc.setFontSize(12);
@@ -108,7 +108,7 @@ export async function exportDepartmentWeeklyReportPDF(
       cellPadding: 3
     },
     columnStyles: {
-      0: { cellWidth: 40, fontStyle: 'bold' },
+      0: { cellWidth: 40 },
       1: { cellWidth: 60 }
     }
   });
@@ -138,7 +138,7 @@ export async function exportDepartmentWeeklyReportPDF(
     headStyles: {
       fillColor: [59, 130, 246],
       textColor: [255, 255, 255],
-      fontStyle: 'bold',
+      fontStyle: 'normal',
       font: 'NotoSansTC'
     },
     columnStyles: {
@@ -192,7 +192,7 @@ export async function exportDepartmentWeeklyReportPDF(
         headStyles: {
           fillColor: [229, 231, 235],
           textColor: [0, 0, 0],
-          fontStyle: 'bold',
+          fontStyle: 'normal',
           font: 'NotoSansTC'
         },
         margin: { left: 20 }

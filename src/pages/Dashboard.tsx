@@ -6,6 +6,7 @@ import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { supabase } from '../lib/supabase';
 import { DepartmentExportButton } from '../components/DepartmentExportButton';
+import { CompanyExportButton } from '../components/CompanyExportButton';
 import type { Profile, Department } from '../types/database';
 
 export function Dashboard() {
@@ -239,6 +240,15 @@ export function Dashboard() {
               ))}
             </select>
           </div>
+          {/* Company Export Button (Super Admin only, when viewing all company) */}
+          {isSuperAdmin && selectedDepartment === 'all' && profiles.length > 0 && (
+            <CompanyExportButton
+              entries={weekEntries}
+              projects={projects}
+              profiles={profiles}
+              departments={departments}
+            />
+          )}
           {/* Department Export Button (Admins only, when viewing a specific department) */}
           {(isSuperAdmin || departmentId) && selectedDepartment !== 'all' && profiles.length > 0 && (
             <DepartmentExportButton

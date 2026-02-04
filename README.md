@@ -2,7 +2,7 @@
 
 > 一個簡潔、易用的團隊工時追蹤與分析系統
 
-![Version](https://img.shields.io/badge/version-1.0.2-blue.svg)
+![Version](https://img.shields.io/badge/version-1.4.0-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green.svg)
 
 ## 📋 目錄
@@ -47,6 +47,16 @@
 - 週次篩選功能
 - 編輯和刪除工時紀錄
 - 統計資訊一目了然
+
+### 📤 報表匯出
+- **部門工時匯出**
+  - 管理者可匯出特定部門的週報/月報
+  - PDF 格式：包含統計摘要、成員明細與每日工時詳情
+  - CSV 格式：適合 Excel 分析與數據處理
+- **全公司工時匯出**
+  - Super Admin 可匯出全公司所有部門的工時報表
+  - 完整的跨部門統計與分析
+  - 支援中文字體，格式美觀易讀
 
 ### 🎨 使用者體驗
 - 完整響應式設計（支援桌面、平板、手機）
