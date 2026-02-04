@@ -1,4 +1,4 @@
-import { format, addDays, startOfWeek, endOfWeek, subWeeks } from 'date-fns';
+import { format, addDays, startOfWeek, endOfWeek, subWeeks, startOfMonth, endOfMonth, subMonths } from 'date-fns';
 import type { TimeEntry } from '../types/database';
 
 interface TimeEntryForm {
@@ -6,6 +6,30 @@ interface TimeEntryForm {
   hours: number;
   date: string;
   note: string;
+}
+
+/**
+ * 取得指定週次的起始和結束日期
+ * @param weeksAgo 往前推幾週 (0 = 本週)
+ */
+export function getWeekDates(weeksAgo: number = 0) {
+  const today = new Date();
+  const targetDate = subWeeks(today, weeksAgo);
+  const start = startOfWeek(targetDate, { weekStartsOn: 1 });
+  const end = endOfWeek(targetDate, { weekStartsOn: 1 });
+  return { start, end };
+}
+
+/**
+ * 取得指定月份的起始和結束日期
+ * @param monthsAgo 往前推幾個月 (0 = 本月)
+ */
+export function getMonthDates(monthsAgo: number = 0) {
+  const today = new Date();
+  const targetDate = subMonths(today, monthsAgo);
+  const start = startOfMonth(targetDate);
+  const end = endOfMonth(targetDate);
+  return { start, end };
 }
 
 /**

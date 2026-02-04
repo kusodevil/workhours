@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { format } from 'date-fns';
 import { Button, Modal } from './ui';
-import { exportDepartmentWeeklyReportPDF, exportDepartmentCSV, getWeekDates, getMonthDates } from '../utils/departmentExport';
+import { exportDepartmentWeeklyReportPDF, exportDepartmentCSV } from '../utils/departmentExport';
+import { getWeekDates, getMonthDates } from '../utils/dateHelpers';
 import type { TimeEntry, Profile, Project } from '../types/database';
 
 interface DepartmentExportButtonProps {

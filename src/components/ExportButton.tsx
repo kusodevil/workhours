@@ -4,10 +4,9 @@ import { Button, Modal } from './ui';
 import {
   exportCSV,
   exportWeeklyReportPDF,
-  exportMonthlyReportPDF,
-  getWeekDates,
-  getMonthDates
+  exportMonthlyReportPDF
 } from '../utils/export';
+import { getWeekDates, getMonthDates } from '../utils/dateHelpers';
 import type { TimeEntry } from '../types/database';
 import type { Project } from '../types/database';
 

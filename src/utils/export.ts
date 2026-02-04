@@ -1,5 +1,5 @@
 import * as XLSX from 'xlsx';
-import { format, startOfWeek, endOfWeek, eachWeekOfInterval, startOfMonth, endOfMonth } from 'date-fns';
+import { format, eachWeekOfInterval, endOfWeek } from 'date-fns';
 import { zhTW } from 'date-fns/locale';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -378,29 +378,3 @@ export async function exportMonthlyReportPDF(
   doc.save(fileName);
 }
 
-/**
- * 計算指定週的起始和結束日期
- */
-export function getWeekDates(weeksAgo: number = 0): { start: Date; end: Date } {
-  const today = new Date();
-  const targetDate = new Date(today);
-  targetDate.setDate(today.getDate() - (weeksAgo * 7));
-
-  const start = startOfWeek(targetDate, { weekStartsOn: 1 });
-  const end = endOfWeek(start, { weekStartsOn: 1 });
-
-  return { start, end };
-}
-
-/**
- * 計算指定月的起始和結束日期
- */
-export function getMonthDates(monthsAgo: number = 0): { start: Date; end: Date } {
-  const today = new Date();
-  const targetDate = new Date(today.getFullYear(), today.getMonth() - monthsAgo, 1);
-
-  const start = startOfMonth(targetDate);
-  const end = endOfMonth(targetDate);
-
-  return { start, end };
-}

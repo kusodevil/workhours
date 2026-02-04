@@ -1,26 +1,9 @@
-import { format, startOfWeek, endOfWeek, subWeeks, startOfMonth, endOfMonth, subMonths } from 'date-fns';
+import { format } from 'date-fns';
 import { zhTW } from 'date-fns/locale';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { loadChineseFont } from './pdfFonts';
 import type { TimeEntry, Profile, Project } from '../types/database';
-
-// 重用 export.ts 的日期工具函式
-export function getWeekDates(weeksAgo: number = 0) {
-  const today = new Date();
-  const targetDate = subWeeks(today, weeksAgo);
-  const start = startOfWeek(targetDate, { weekStartsOn: 1 });
-  const end = endOfWeek(targetDate, { weekStartsOn: 1 });
-  return { start, end };
-}
-
-export function getMonthDates(monthsAgo: number = 0) {
-  const today = new Date();
-  const targetDate = subMonths(today, monthsAgo);
-  const start = startOfMonth(targetDate);
-  const end = endOfMonth(targetDate);
-  return { start, end };
-}
 
 // 按使用者分組工時記錄
 interface UserTimeStats {
