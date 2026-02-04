@@ -27,9 +27,17 @@ dist-ssr
 .env
 .env.local
 .env.*.local
+.env.vercel
+.env.vercel.production
 supabase/.env.local
 
 # Claude Code
 .claude/
 .vercel
 .env.production.backup
+
+# Supabase
+supabase/.temp/
+
+# Personal files
+OWNERSHIP.md
