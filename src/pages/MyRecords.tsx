@@ -17,7 +17,10 @@ export function MyRecords() {
   const { projects, getProjectById } = useProjects();
   const [editingEntry, setEditingEntry] = useState<TimeEntry | null>(null);
   const [deletingEntryId, setDeletingEntryId] = useState<string | null>(null);
-  const [selectedWeek, setSelectedWeek] = useState<string>('all');
+  // 預設顯示當週（本週一的日期）
+  const [selectedWeek, setSelectedWeek] = useState<string>(
+    format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd')
+  );
 
   if (authLoading) {
     return <div className="flex justify-center py-12 text-gray-900 dark:text-gray-100">載入中...</div>;
