@@ -17,7 +17,7 @@ interface TimeEntryEditModalProps {
 
 export function TimeEntryEditModal({ entry, projects, onClose, onSave }: TimeEntryEditModalProps) {
   const [projectId, setProjectId] = useState(entry.project_id);
-  const [hours, setHours] = useState(entry.hours);
+  const [hours, setHours] = useState<number | string>(entry.hours);
   const [date, setDate] = useState(entry.date);
   const [note, setNote] = useState(entry.note || '');
 
@@ -26,12 +26,15 @@ export function TimeEntryEditModal({ entry, projects, onClose, onSave }: TimeEnt
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
+    // 將 hours 轉換為數字並驗證
+    const hoursNum = typeof hours === 'string' ? parseFloat(hours) : hours;
+
     // 驗證必填欄位
-    if (!projectId || !hours || !date) {
+    if (!projectId || !hoursNum || isNaN(hoursNum) || !date) {
       return;
     }
 
-    onSave(entry.id, { project_id: projectId, hours, date, note });
+    onSave(entry.id, { project_id: projectId, hours: hoursNum, date, note });
     onClose();
   };
 
@@ -56,7 +59,7 @@ export function TimeEntryEditModal({ entry, projects, onClose, onSave }: TimeEnt
           max={24}
           step={0.5}
           value={hours}
-          onChange={e => setHours(parseFloat(e.target.value) || 0)}
+          onChange={e => setHours(e.target.value === '' ? '' : parseFloat(e.target.value))}
         />
         <Input
           label="日期"
