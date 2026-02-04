@@ -12,7 +12,7 @@ import type { Profile, Department } from '../types/database';
 export function Dashboard() {
   const { timeEntries } = useTimeEntries();
   const { projects } = useProjects();
-  const { isSuperAdmin, departmentId } = useAuth();
+  const { isSuperAdmin, isAdmin, departmentId } = useAuth();
   const { effectiveTheme } = useTheme();
   const [selectedWeek, setSelectedWeek] = useState(0);
   const [selectedDepartment, setSelectedDepartment] = useState<string>('all'); // 'all' or department_id
@@ -249,8 +249,10 @@ export function Dashboard() {
               departments={departments}
             />
           )}
-          {/* Department Export Button (Admins only, when viewing a specific department) */}
-          {(isSuperAdmin || departmentId) && selectedDepartment !== 'all' && profiles.length > 0 && (
+          {/* Department Export Button */}
+          {/* Super Admin: when viewing a specific department */}
+          {/* Department Admin: always show (they only see their own department) */}
+          {((isSuperAdmin && selectedDepartment !== 'all') || (!isSuperAdmin && isAdmin && departmentId)) && profiles.length > 0 && (
             <DepartmentExportButton
               entries={weekEntries}
               projects={projects}
