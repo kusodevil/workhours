@@ -1,0 +1,33 @@
+name: Supabase Keep-Alive Ping
+
+on:
+  schedule:
+    # 每週一、週四凌晨 0 點 UTC 執行（最大間隔 4 天，遠低於 7 天暫停門檻）
+    - cron: '0 0 * * 1,4'
+  workflow_dispatch: # 允許手動觸發
+
+jobs:
+  ping:
+    name: Ping Supabase Instances
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Ping Dev Supabase
+        run: |
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+            -H "apikey: ${{ secrets.DEV_SUPABASE_ANON_KEY }}" \
+            "https://fidzhmkhxouhaxmzfhfz.supabase.co/rest/v1/")
+          echo "Dev Supabase HTTP status: $STATUS"
+          if [ "$STATUS" != "200" ]; then
+            echo "::warning::Dev Supabase returned non-200 status: $STATUS"
+          fi
+
+      - name: Ping Prod Supabase
+        run: |
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+            -H "apikey: ${{ secrets.PROD_SUPABASE_ANON_KEY }}" \
+            "https://hnbxlvrdrdbagidqnzrj.supabase.co/rest/v1/")
+          echo "Prod Supabase HTTP status: $STATUS"
+          if [ "$STATUS" != "200" ]; then
+            echo "::warning::Prod Supabase returned non-200 status: $STATUS"
+          fi
