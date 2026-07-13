@@ -2,8 +2,8 @@ name: Supabase Keep-Alive Ping
 
 on:
   schedule:
-    # 每週一、週四凌晨 0 點 UTC 執行（最大間隔 4 天，遠低於 7 天暫停門檻）
-    - cron: '0 0 * * 1,4'
+    # 每日 UTC 03:27 執行 (avoid整點高峰; daily 遠低於 7 天 pause 門檻)
+    - cron: '27 3 * * *'
   workflow_dispatch: # 允許手動觸發
 
 jobs:
@@ -12,22 +12,30 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Ping Dev Supabase
+      - name: Ping Dev Supabase (real DB query)
+        continue-on-error: true
         run: |
-          STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+          STATUS=$(curl -s -o /tmp/dev.json -w "%{http_code}" \
             -H "apikey: ${{ secrets.DEV_SUPABASE_ANON_KEY }}" \
-            "https://fidzhmkhxouhaxmzfhfz.supabase.co/rest/v1/")
+            "https://fidzhmkhxouhaxmzfhfz.supabase.co/rest/v1/time_entries?select=id&limit=1")
           echo "Dev Supabase HTTP status: $STATUS"
+          echo "Body (first 200 chars):"
+          head -c 200 /tmp/dev.json
+          echo ""
           if [ "$STATUS" != "200" ]; then
-            echo "::warning::Dev Supabase returned non-200 status: $STATUS"
+            echo "::warning::Dev Supabase returned $STATUS (project may be paused — restore in dashboard)"
           fi
 
-      - name: Ping Prod Supabase
+      - name: Ping Prod Supabase (real DB query)
         run: |
-          STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+          STATUS=$(curl -s -o /tmp/prod.json -w "%{http_code}" \
             -H "apikey: ${{ secrets.PROD_SUPABASE_ANON_KEY }}" \
-            "https://hnbxlvrdrdbagidqnzrj.supabase.co/rest/v1/")
+            "https://hnbxlvrdrdbagidqnzrj.supabase.co/rest/v1/time_entries?select=id&limit=1")
           echo "Prod Supabase HTTP status: $STATUS"
+          echo "Body (first 200 chars):"
+          head -c 200 /tmp/prod.json
+          echo ""
           if [ "$STATUS" != "200" ]; then
-            echo "::warning::Prod Supabase returned non-200 status: $STATUS"
+            echo "::warning::Prod Supabase returned $STATUS"
+            exit 1
           fi
