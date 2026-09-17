@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Archived] - 2026-09-17
+
+### Changed
+- 🗄️ **專案封存**：服務停止營運，Supabase 專案暫停
+  - 新增 `supabase/archive/` 保存 DB schema 與 roles（不含資料）
+  - 新增 `docs/ARCHIVE.md` 說明封存內容與還原步驟
+
+### Removed
+- `.github/workflows/supabase-keep-alive.yml` 每日 keep-alive 排程
+
 ## [1.4.0] - 2026-02-04
 
 ### Added

@@ -2,6 +2,8 @@
 
 > 一個簡潔、易用的團隊工時追蹤與分析系統
 
+> **⚠️ 本專案已於 2026-09-17 封存**，服務已停止運作。程式碼與資料庫 schema 保留作為作品集，還原步驟見 [docs/ARCHIVE.md](docs/ARCHIVE.md)。
+
 ![Version](https://img.shields.io/badge/version-1.4.0-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green.svg)
 
