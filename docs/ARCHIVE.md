@@ -1,13 +1,14 @@
-# 專案封存說明 (2026-09-17)
+# 1.x 多人版後端封存說明 (2026-09-17)
 
-WorkHours 已於 2026-09-17 停止營運，Supabase 專案 `workhours-Prod` (hnbxlvrdrdbagidqnzrj) 已暫停，`workhours-dev` 已刪除。
-程式碼保留於此 repo 作為作品集；資料庫 schema 保留於 `supabase/archive/`。
+WorkHours 1.x 是以 Supabase 為後端的多人團隊版（帳號、部門、管理員）。2.0 起改為純本機個人版，
+Supabase 專案 `workhours-Prod` (hnbxlvrdrdbagidqnzrj) 已暫停，`workhours-dev` 已刪除。
+1.x 的程式碼在 git tag `v1.4.0`；資料庫 schema 保留於 `supabase/archive/`。
 
 ## 封存內容
 
 | 內容 | 位置 | 說明 |
 |---|---|---|
-| 應用程式原始碼 | 本 repo | 最終版本 v1.4.0 |
+| 1.x 應用程式原始碼 | git tag `v1.4.0` | 多人版最終版本 |
 | DB schema（table、RLS、function、trigger） | `supabase/archive/schema.sql` | 不含任何資料 |
 | DB roles | `supabase/archive/roles.sql` | |
 | **資料**（time_entries、profiles、auth users、storage metadata） | **不在 repo 內**（含個資） | 由專案擁有者私下保存 |

@@ -1,8 +1,8 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import type { ReactNode } from 'react';
-import { supabase } from '../lib/supabase';
+import { db, newId, now } from '../lib/db';
 import type { Project } from '../types/database';
-import { useAuth } from './AuthContext';
+import { useUser } from './UserContext';
 
 interface ProjectContextType {
   projects: Project[];
@@ -15,6 +15,8 @@ interface ProjectContextType {
 }
 
 const ProjectContext = createContext<ProjectContextType | undefined>(undefined);
+
+const errorMessage = (e: unknown) => (e instanceof Error ? e.message : '操作失敗');
 
 // 預設顏色選項 - 柔和色系
 export const PROJECT_COLORS = [
@@ -53,19 +55,15 @@ export function getUsedColors(projects: Project[], excludeProjectId?: string): S
 export function ProjectProvider({ children }: { children: ReactNode }) {
   const [projects, setProjects] = useState<Project[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const { user } = useAuth();
+  const { profile } = useUser();
 
   const fetchProjects = useCallback(async () => {
     setIsLoading(true);
-    const { data, error } = await supabase
-      .from('projects')
-      .select('*')
-      .order('created_at', { ascending: false });
-
-    if (error) {
-      console.error('Error fetching projects:', error);
-    } else {
-      setProjects((data as Project[]) || []);
+    try {
+      const data = await db.projects.orderBy('created_at').reverse().toArray();
+      setProjects(data);
+    } catch (e) {
+      console.error('Error fetching projects:', e);
     }
     setIsLoading(false);
   }, []);
@@ -79,26 +77,27 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
     color: string,
     description?: string
   ): Promise<{ error: string | null }> => {
-    if (!user) {
-      return { error: '請先登入' };
+    if (!profile) {
+      return { error: '個人檔案尚未載入' };
     }
 
-    const { data, error } = await supabase
-      .from('projects')
-      .insert({
-        name,
-        color,
-        description: description || null,
-        created_by: user.id,
-      })
-      .select()
-      .single();
+    const data: Project = {
+      id: newId(),
+      name,
+      color,
+      description: description || null,
+      is_active: true,
+      created_by: profile.id,
+      created_at: now(),
+    };
 
-    if (error) {
-      return { error: error.message };
+    try {
+      await db.projects.add(data);
+    } catch (e) {
+      return { error: errorMessage(e) };
     }
 
-    setProjects(prev => [data as Project, ...prev]);
+    setProjects(prev => [data, ...prev]);
     return { error: null };
   };
 
@@ -106,40 +105,25 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
     id: string,
     updates: Partial<Pick<Project, 'name' | 'color' | 'description' | 'is_active'>>
   ): Promise<{ error: string | null }> => {
-    const { data, error } = await supabase
-      .from('projects')
-      .update(updates)
-      .eq('id', id)
-      .select()
-      .single();
-
-    if (error) {
-      return { error: error.message };
+    try {
+      await db.projects.update(id, updates);
+    } catch (e) {
+      return { error: errorMessage(e) };
     }
 
-    setProjects(prev => prev.map(p => (p.id === id ? (data as Project) : p)));
+    setProjects(prev => prev.map(p => (p.id === id ? { ...p, ...updates } : p)));
     return { error: null };
   };
 
   const deleteProject = async (id: string): Promise<{ error: string | null }> => {
-    // First, delete all time entries associated with this project
-    const { error: entriesError } = await supabase
-      .from('time_entries')
-      .delete()
-      .eq('project_id', id);
-
-    if (entriesError) {
-      return { error: '刪除專案時數失敗：' + entriesError.message };
-    }
-
-    // Then delete the project
-    const { error: projectError } = await supabase
-      .from('projects')
-      .delete()
-      .eq('id', id);
-
-    if (projectError) {
-      return { error: '刪除專案失敗：' + projectError.message };
+    // 專案與其所有工時紀錄一起刪除
+    try {
+      await db.transaction('rw', db.projects, db.time_entries, async () => {
+        await db.time_entries.where('project_id').equals(id).delete();
+        await db.projects.delete(id);
+      });
+    } catch (e) {
+      return { error: '刪除專案失敗：' + errorMessage(e) };
     }
 
     setProjects(prev => prev.filter(p => p.id !== id));

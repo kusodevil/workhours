@@ -1,6 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Navigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { useUser } from '../context/UserContext';
 import { useTimeEntries } from '../context/TimeEntryContext';
 import { useProjects } from '../context/ProjectContext';
 import { format, startOfWeek, endOfWeek, subWeeks, isWeekend } from 'date-fns';
@@ -12,7 +11,7 @@ import { TimeEntryEditModal } from '../components/TimeEntryEditModal';
 import type { TimeEntry } from '../types/database';
 
 export function MyRecords() {
-  const { isAuthenticated, user, profile, isLoading: authLoading } = useAuth();
+  const { profile, isLoading: profileLoading } = useUser();
   const { timeEntries, updateEntry, deleteEntry, isLoading: entriesLoading } = useTimeEntries();
   const { projects, getProjectById } = useProjects();
   const [editingEntry, setEditingEntry] = useState<TimeEntry | null>(null);
@@ -22,15 +21,7 @@ export function MyRecords() {
     format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd')
   );
 
-  if (authLoading) {
-    return <div className="flex justify-center py-12 text-gray-900 dark:text-gray-100">載入中...</div>;
-  }
-
-  if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
-  }
-
-  const userId = user?.id;
+  const userId = profile?.id;
 
   // Generate week options for filter
   const weekOptions = useMemo(() => {
@@ -143,7 +134,7 @@ export function MyRecords() {
     }
   };
 
-  if (entriesLoading) {
+  if (profileLoading || entriesLoading) {
     return <div className="flex justify-center py-12 text-gray-900 dark:text-gray-100">載入中...</div>;
   }
 

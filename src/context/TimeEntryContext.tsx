@@ -1,8 +1,8 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import type { ReactNode } from 'react';
-import { supabase } from '../lib/supabase';
+import { db, newId, now } from '../lib/db';
 import type { TimeEntry } from '../types/database';
-import { useAuth } from './AuthContext';
+import { useUser } from './UserContext';
 
 interface TimeEntryContextType {
   timeEntries: TimeEntry[];
@@ -15,22 +15,20 @@ interface TimeEntryContextType {
 
 const TimeEntryContext = createContext<TimeEntryContextType | undefined>(undefined);
 
+const errorMessage = (e: unknown) => (e instanceof Error ? e.message : '操作失敗');
+
 export function TimeEntryProvider({ children }: { children: ReactNode }) {
   const [timeEntries, setTimeEntries] = useState<TimeEntry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const { user } = useAuth();
+  const { profile } = useUser();
 
   const fetchEntries = useCallback(async () => {
     setIsLoading(true);
-    const { data, error } = await supabase
-      .from('time_entries')
-      .select('*')
-      .order('date', { ascending: false });
-
-    if (error) {
-      console.error('Error fetching time entries:', error);
-    } else {
-      setTimeEntries((data as TimeEntry[]) || []);
+    try {
+      const data = await db.time_entries.orderBy('date').reverse().toArray();
+      setTimeEntries(data);
+    } catch (e) {
+      console.error('Error fetching time entries:', e);
     }
     setIsLoading(false);
   }, []);
@@ -45,27 +43,29 @@ export function TimeEntryProvider({ children }: { children: ReactNode }) {
     date: string;
     note?: string;
   }): Promise<{ error: string | null }> => {
-    if (!user) {
-      return { error: '請先登入' };
+    if (!profile) {
+      return { error: '個人檔案尚未載入' };
     }
 
-    const { data, error } = await supabase
-      .from('time_entries')
-      .insert({
-        user_id: user.id,
-        project_id: entry.project_id,
-        hours: entry.hours,
-        date: entry.date,
-        note: entry.note || null,
-      })
-      .select()
-      .single();
+    const ts = now();
+    const data: TimeEntry = {
+      id: newId(),
+      user_id: profile.id,
+      project_id: entry.project_id,
+      hours: entry.hours,
+      date: entry.date,
+      note: entry.note || null,
+      created_at: ts,
+      updated_at: ts,
+    };
 
-    if (error) {
-      return { error: error.message };
+    try {
+      await db.time_entries.add(data);
+    } catch (e) {
+      return { error: errorMessage(e) };
     }
 
-    setTimeEntries(prev => [data as TimeEntry, ...prev]);
+    setTimeEntries(prev => [data, ...prev]);
     return { error: null };
   };
 
@@ -73,32 +73,22 @@ export function TimeEntryProvider({ children }: { children: ReactNode }) {
     id: string,
     updates: Partial<Pick<TimeEntry, 'project_id' | 'hours' | 'date' | 'note'>>
   ): Promise<{ error: string | null }> => {
-    const { data, error } = await supabase
-      .from('time_entries')
-      .update({
-        ...updates,
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', id)
-      .select()
-      .single();
-
-    if (error) {
-      return { error: error.message };
+    const patch = { ...updates, updated_at: now() };
+    try {
+      await db.time_entries.update(id, patch);
+    } catch (e) {
+      return { error: errorMessage(e) };
     }
 
-    setTimeEntries(prev => prev.map(e => (e.id === id ? (data as TimeEntry) : e)));
+    setTimeEntries(prev => prev.map(e => (e.id === id ? { ...e, ...patch } : e)));
     return { error: null };
   };
 
   const deleteEntry = async (id: string): Promise<{ error: string | null }> => {
-    const { error } = await supabase
-      .from('time_entries')
-      .delete()
-      .eq('id', id);
-
-    if (error) {
-      return { error: error.message };
+    try {
+      await db.time_entries.delete(id);
+    } catch (e) {
+      return { error: errorMessage(e) };
     }
 
     setTimeEntries(prev => prev.filter(e => e.id !== id));

@@ -1,8 +1,7 @@
 import { useState } from 'react';
-import { useAuth } from '../context/AuthContext';
+import { useUser } from '../context/UserContext';
 import { useTimeEntries } from '../context/TimeEntryContext';
 import { useProjects, PROJECT_COLORS, getUsedColors } from '../context/ProjectContext';
-import { Navigate } from 'react-router-dom';
 import { Modal } from '../components/ui';
 import { Button } from '../components/ui';
 import { WeekProgressIndicator } from '../components/WeekProgressIndicator';
@@ -18,7 +17,7 @@ interface TimeEntryForm {
 }
 
 export function Timesheet() {
-  const { isAuthenticated, isLoading: authLoading, user } = useAuth();
+  const { profile, isLoading: profileLoading } = useUser();
   const { addEntry, timeEntries } = useTimeEntries();
   const { projects, addProject, updateProject, deleteProject, isLoading: projectsLoading } = useProjects();
   const [entries, setEntries] = useState<TimeEntryForm[]>([
@@ -48,12 +47,8 @@ export function Timesheet() {
   // Quick fill modal state
   const [showBatchFill, setShowBatchFill] = useState(false);
 
-  if (authLoading) {
+  if (profileLoading) {
     return <div className="flex justify-center py-12">載入中...</div>;
-  }
-
-  if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
   }
 
   const activeProjects = projects.filter(p => p.is_active);
@@ -146,9 +141,9 @@ export function Timesheet() {
 
   // Quick fill handlers
   const handleCopyLastWeek = () => {
-    if (!user) return;
+    if (!profile) return;
 
-    const lastWeek = getLastWeekEntries(timeEntries, user.id);
+    const lastWeek = getLastWeekEntries(timeEntries, profile.id);
     if (lastWeek.length === 0) {
       setError('上週無工時記錄，無法複製');
       setTimeout(() => setError(''), 3000);
@@ -221,9 +216,9 @@ export function Timesheet() {
       )}
 
       {/* Week Progress Indicator */}
-      {user && (
+      {profile && (
         <div className="mb-6">
-          <WeekProgressIndicator entries={timeEntries} userId={user.id} />
+          <WeekProgressIndicator entries={timeEntries} userId={profile.id} />
         </div>
       )}
 

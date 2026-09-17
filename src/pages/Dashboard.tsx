@@ -1,23 +1,15 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { useTimeEntries } from '../context/TimeEntryContext';
 import { useProjects } from '../context/ProjectContext';
-import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
-import { supabase } from '../lib/supabase';
-import { DepartmentExportButton } from '../components/DepartmentExportButton';
-import { CompanyExportButton } from '../components/CompanyExportButton';
-import type { Profile, Department } from '../types/database';
+import { Link } from 'react-router-dom';
 
 export function Dashboard() {
-  const { timeEntries } = useTimeEntries();
+  const { timeEntries, isLoading } = useTimeEntries();
   const { projects } = useProjects();
-  const { isSuperAdmin, isDepartmentAdmin, departmentId } = useAuth();
   const { effectiveTheme } = useTheme();
   const [selectedWeek, setSelectedWeek] = useState(0);
-  const [selectedDepartment, setSelectedDepartment] = useState<string>('all'); // 'all' or department_id
-  const [profiles, setProfiles] = useState<Profile[]>([]);
-  const [departments, setDepartments] = useState<Department[]>([]);
 
   // Calculate week options
   const weekOptions = useMemo(() => {
@@ -38,28 +30,12 @@ export function Dashboard() {
     return options;
   }, []);
 
-  // Filter entries by selected week and department
+  // Filter entries by selected week
   const weekEntries = useMemo(() => {
     const week = weekOptions[selectedWeek];
     if (!week) return [];
-
-    return timeEntries.filter(e => {
-      const d = e.date;
-      const isInWeek = d >= week.start && d <= week.end;
-
-      if (!isInWeek) return false;
-
-      // Super Admin: filter by selected department
-      if (isSuperAdmin && selectedDepartment !== 'all') {
-        const profile = profiles.find(p => p.id === e.user_id);
-        return profile?.department_id === selectedDepartment;
-      }
-
-      // Department Admin/Member: already filtered by fetchProfiles
-      // Just need to check if the user is in our profiles list
-      return profiles.some(p => p.id === e.user_id);
-    });
-  }, [selectedWeek, weekOptions, timeEntries, isSuperAdmin, selectedDepartment, profiles]);
+    return timeEntries.filter(e => e.date >= week.start && e.date <= week.end);
+  }, [selectedWeek, weekOptions, timeEntries]);
 
   // Project stats for charts
   const projectStats = useMemo(() => {
@@ -112,156 +88,49 @@ export function Dashboard() {
     });
   }, [weekEntries, weekOptions, selectedWeek, projects]);
 
-  // Fetch departments and profiles
-  useEffect(() => {
-    const fetchData = async () => {
-      // 如果不是 Super Admin 但 departmentId 還沒載入，先不載入資料
-      // 避免閃現其他部門的資料
-      if (!isSuperAdmin && !departmentId) {
-        console.log('[Dashboard] Waiting for departmentId to load...');
-        return;
-      }
-
-      // Fetch departments
-      const { data: deptData, error: deptError } = await supabase
-        .from('departments')
-        .select('*')
-        .eq('is_active', true)
-        .order('name');
-
-      if (deptError) {
-        console.error('Error fetching departments:', deptError);
-      } else if (deptData) {
-        setDepartments(deptData as Department[]);
-      }
-
-      // Fetch profiles based on role
-      let query = supabase.from('profiles').select('*');
-
-      // If not super admin, filter by department
-      if (!isSuperAdmin && departmentId) {
-        query = query.eq('department_id', departmentId);
-      }
-
-      const { data: profileData, error: profileError } = await query.order('username');
-
-      if (profileError) {
-        console.error('Error fetching profiles:', profileError);
-      } else if (profileData) {
-        console.log('Loaded profiles:', profileData.length, 'profiles');
-        setProfiles(profileData as Profile[]);
-      }
-    };
-
-    fetchData();
-  }, [isSuperAdmin, departmentId]);
-
-  // Member stats - hours by member and project
-  const memberStats = useMemo(() => {
-    const stats: Record<string, { username: string; total: number; [key: string]: number | string }> = {};
-
-    weekEntries.forEach(entry => {
-      const profile = profiles.find(p => p.id === entry.user_id);
-      const project = projects.find(p => p.id === entry.project_id);
-
-      if (project) {
-        // Use profile username if available, otherwise show user ID
-        const username = profile?.username || `使用者 (${entry.user_id.slice(0, 8)})`;
-        const userId = entry.user_id;
-
-        if (!stats[userId]) {
-          stats[userId] = { username, total: 0 };
-        }
-        stats[userId][project.name] = (stats[userId][project.name] as number || 0) + entry.hours;
-        stats[userId].total = (stats[userId].total as number) + entry.hours;
-      }
-    });
-
-    return Object.values(stats).sort((a, b) => (b.total as number) - (a.total as number));
-  }, [weekEntries, profiles, projects]);
-
   const activeProjects = projects.filter(p => p.is_active);
   const totalHours = weekEntries.reduce((sum, e) => sum + e.hours, 0);
 
-  // Calculate average hours per day per person who actually logged time
-  // Count unique (user_id, date) combinations to get total person-days
-  const personDays = new Set(
-    weekEntries.map(entry => `${entry.user_id}_${entry.date}`)
-  ).size;
-
-  const avgHoursPerDay = personDays > 0 ? totalHours / personDays : 0;
-
-  // Get current department name
-  const currentDepartmentName = useMemo(() => {
-    if (isSuperAdmin && selectedDepartment === 'all') {
-      return '全公司';
-    }
-
-    const deptId = isSuperAdmin ? selectedDepartment : departmentId;
-    const dept = departments.find(d => d.id === deptId);
-    return dept?.name || '載入中...';
-  }, [isSuperAdmin, selectedDepartment, departmentId, departments]);
+  // 平均每日：只算有填工時的天數
+  const workedDays = new Set(weekEntries.map(entry => entry.date)).size;
+  const avgHoursPerDay = workedDays > 0 ? totalHours / workedDays : 0;
+  const isEmpty = !isLoading && timeEntries.length === 0;
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{currentDepartmentName} 的工時總覽</h1>
-          <p className="text-gray-500 dark:text-gray-400 mt-1">查看團隊工時分配狀況</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">工時總覽</h1>
+          <p className="text-gray-500 dark:text-gray-400 mt-1">查看每週工時分配狀況</p>
         </div>
-        <div className="flex flex-col sm:flex-row gap-3">
-          <div className="flex gap-3">
-            {/* Department Selector (Super Admin only) */}
-            {isSuperAdmin && (
-              <select
-                value={selectedDepartment}
-                onChange={e => setSelectedDepartment(e.target.value)}
-                className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none"
-              >
-                <option value="all">全公司</option>
-                {departments.map(dept => (
-                  <option key={dept.id} value={dept.id}>
-                    {dept.name}
-                  </option>
-                ))}
-              </select>
-            )}
-            {/* Week Selector */}
-            <select
-              value={selectedWeek}
-              onChange={e => setSelectedWeek(Number(e.target.value))}
-              className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none"
-            >
-              {weekOptions.map(opt => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.value === 0 ? '本週 ' : ''}{opt.label}
-                </option>
-              ))}
-            </select>
-          </div>
-          {/* Company Export Button (Super Admin only, when viewing all company) */}
-          {isSuperAdmin && selectedDepartment === 'all' && profiles.length > 0 && (
-            <CompanyExportButton
-              entries={weekEntries}
-              projects={projects}
-              profiles={profiles}
-              departments={departments}
-            />
-          )}
-          {/* Department Export Button */}
-          {/* Super Admin: when viewing a specific department */}
-          {/* Department Admin: always show (they only see their own department) */}
-          {((isSuperAdmin && selectedDepartment !== 'all') || (isDepartmentAdmin && departmentId)) && profiles.length > 0 && (
-            <DepartmentExportButton
-              entries={weekEntries}
-              projects={projects}
-              profiles={profiles}
-              departmentName={currentDepartmentName}
-            />
-          )}
-        </div>
+        {/* Week Selector */}
+        <select
+          value={selectedWeek}
+          onChange={e => setSelectedWeek(Number(e.target.value))}
+          className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none"
+        >
+          {weekOptions.map(opt => (
+            <option key={opt.value} value={opt.value}>
+              {opt.value === 0 ? '本週 ' : ''}{opt.label}
+            </option>
+          ))}
+        </select>
       </div>
+
+      {/* 第一次使用：還沒有任何資料 */}
+      {isEmpty && (
+        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-5 text-sm text-blue-800 dark:text-blue-300">
+          <p className="font-medium">歡迎使用 WorkHours</p>
+          <p className="mt-1">
+            所有資料都只存在這台電腦的瀏覽器裡。你可以直接到
+            <Link to="/timesheet" className="underline mx-1">填寫工時</Link>
+            開始，或先到
+            <Link to="/settings" className="underline mx-1">設定</Link>
+            匯入之前的備份。
+          </p>
+        </div>
+      )}
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -448,71 +317,6 @@ export function Dashboard() {
         ) : (
           <div className="px-6 py-12 text-center text-gray-400">
             本週尚無工時紀錄，請先填寫工時
-          </div>
-        )}
-      </div>
-
-      {/* Member Hours Summary - Horizontal Stacked Bar Chart */}
-      <div className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700">
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">成員工時總覽</h2>
-        {memberStats.length > 0 ? (
-          <div className="outline-none focus:outline-none [&_*]:outline-none [&_*]:focus:outline-none">
-            <ResponsiveContainer width="100%" height={Math.max(280, memberStats.length * 55 + 100)}>
-              <BarChart
-                data={memberStats}
-                layout="vertical"
-                margin={{ top: 20, right: 30, left: 80, bottom: 60 }}
-                barCategoryGap="18%"
-              >
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis
-                  type="number"
-                  label={{ value: '工時', position: 'insideBottom', offset: -5 }}
-                  tickMargin={10}
-                  height={40}
-                />
-                <YAxis
-                  type="category"
-                  dataKey="username"
-                  width={70}
-                  tickMargin={10}
-                />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: effectiveTheme === 'dark' ? 'rgba(31, 41, 55, 0.98)' : 'rgba(255, 255, 255, 0.98)',
-                    border: effectiveTheme === 'dark' ? '1px solid #374151' : '1px solid #e5e7eb',
-                    borderRadius: '8px',
-                    boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-                    color: effectiveTheme === 'dark' ? '#f3f4f6' : '#111827'
-                  }}
-                  itemStyle={{
-                    color: effectiveTheme === 'dark' ? '#f3f4f6' : '#111827'
-                  }}
-                  labelStyle={{
-                    color: effectiveTheme === 'dark' ? '#f3f4f6' : '#111827'
-                  }}
-                  wrapperStyle={{
-                    outline: 'none',
-                    zIndex: 1000
-                  }}
-                  cursor={false}
-                />
-                <Legend wrapperStyle={{ paddingTop: '15px' }} />
-                {activeProjects.map(project => (
-                  <Bar
-                    key={project.id}
-                    dataKey={project.name}
-                    stackId="a"
-                    fill={project.color}
-                    maxBarSize={40}
-                  />
-                ))}
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        ) : (
-          <div className="h-[300px] flex items-center justify-center text-gray-400">
-            本週尚無工時紀錄
           </div>
         )}
       </div>

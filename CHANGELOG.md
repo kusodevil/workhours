@@ -5,14 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Archived] - 2026-09-17
+## [2.0.0] - 2026-09-17
 
 ### Changed
-- 🗄️ **專案封存**：服務停止營運，Supabase 專案暫停
-  - 新增 `supabase/archive/` 保存 DB schema 與 roles（不含資料）
-  - 新增 `docs/ARCHIVE.md` 說明封存內容與還原步驟
+- 💾 **改為純本機個人版**：移除 Supabase 後端，資料改存瀏覽器 IndexedDB (Dexie)
+  - 不需登入，開啟即用
+  - 頭像改以 data URL 存在本機（自動縮至 256×256）
+  - 總覽、趨勢改為單人視角
+- 1.x 多人版後端已停止營運，schema 與還原步驟見 `docs/ARCHIVE.md`
+
+### Added
+- 設定頁「資料備份」：匯出 / 匯入 JSON、清除所有資料
+- 首次開啟的歡迎提示
 
 ### Removed
+- 登入、註冊、帳號管理、部門管理、Edge Functions
+- 公司 / 部門工時匯出（單人版不適用）
 - `.github/workflows/supabase-keep-alive.yml` 每日 keep-alive 排程
 
 ## [1.4.0] - 2026-02-04

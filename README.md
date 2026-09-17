@@ -1,10 +1,11 @@
 # WorkHours - 工時管理系統
 
-> 一個簡潔、易用的團隊工時追蹤與分析系統
+> 一個簡潔、易用的個人工時追蹤與分析工具——不需帳號、不需後端，資料只存在你的瀏覽器裡。
 
-> **⚠️ 本專案已於 2026-09-17 封存**，服務已停止運作。程式碼與資料庫 schema 保留作為作品集，還原步驟見 [docs/ARCHIVE.md](docs/ARCHIVE.md)。
+> **2.0 起為純本機個人版。** 1.x 是以 Supabase 為後端的多人團隊版（帳號、部門、管理員），
+> 已於 2026-09-17 停止營運；其 schema 與還原步驟保留在 [docs/ARCHIVE.md](docs/ARCHIVE.md)。
 
-![Version](https://img.shields.io/badge/version-1.4.0-blue.svg)
+![Version](https://img.shields.io/badge/version-2.0.0-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green.svg)
 
 ## 📋 目錄
@@ -20,10 +21,10 @@
 
 ## ✨ 功能特色
 
-### 🔐 使用者管理
-- 完整的帳號註冊與登入系統
-- 個人資料編輯（使用者名稱、頭像上傳）
-- 安全的身份驗證機制
+### 💾 本機優先
+- 不需註冊登入，開啟即用
+- 所有資料存在瀏覽器 IndexedDB，離線可用
+- 一鍵匯出 / 匯入 JSON 備份
 
 ### ⏱️ 工時填寫
 - 直覺的工時填寫介面
@@ -76,12 +77,10 @@
 - **圖表**: Recharts
 - **日期處理**: date-fns
 
-### 後端
-- **BaaS**: Supabase
-  - 認證系統
-  - PostgreSQL 資料庫
-  - Storage (頭像儲存)
-  - Row Level Security (RLS)
+### 資料儲存
+- **IndexedDB** (透過 [Dexie](https://dexie.org/))：沒有後端、沒有帳號
+- 頭像縮成 256×256 後以 data URL 存在本機
+- 備份格式：單一 JSON 檔（個人檔案 + 專案 + 工時）
 
 ## 🚀 快速開始
 
@@ -89,7 +88,6 @@
 
 - Node.js >= 18.0.0
 - npm >= 9.0.0 (或 yarn / pnpm)
-- Supabase 帳號
 
 ### 安裝步驟
 
@@ -104,22 +102,7 @@
    npm install
    \`\`\`
 
-3. **設定環境變數**
-   \`\`\`bash
-   cp .env.example .env
-   \`\`\`
-
-   編輯 \`.env\` 檔案，填入你的 Supabase 資訊：
-   \`\`\`env
-   VITE_SUPABASE_URL=your_supabase_project_url
-   VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
-   \`\`\`
-
-4. **設定資料庫**
-
-   到你的 Supabase 專案的 SQL Editor 執行 \`docs/DATABASE.md\` 中的 SQL 腳本
-
-5. **啟動開發伺服器**
+3. **啟動開發伺服器**
    \`\`\`bash
    npm run dev
    \`\`\`
@@ -137,11 +120,7 @@
    - 點擊 "Add New Project"
    - 選擇你的 GitHub 專案
 
-3. **設定環境變數**
-   - \`VITE_SUPABASE_URL\` - 你的 Supabase URL
-   - \`VITE_SUPABASE_ANON_KEY\` - 你的 Supabase Anon Key
-
-4. **部署**
+3. **部署**（不需要任何環境變數）
    - 點擊 "Deploy"
    - 等待建置完成
    - 你的應用將會部署到 \`https://your-project.vercel.app\`

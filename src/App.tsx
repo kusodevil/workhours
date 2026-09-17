@@ -1,46 +1,50 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { ThemeProvider } from './context/ThemeContext';
-import { AuthProvider } from './context/AuthContext';
+import { UserProvider, useUser } from './context/UserContext';
 import { ProjectProvider } from './context/ProjectContext';
 import { TimeEntryProvider } from './context/TimeEntryContext';
 import { Layout } from './components/Layout';
-import { ProtectedRoute } from './components/ProtectedRoute';
 import { Dashboard } from './pages/Dashboard';
-import { Login } from './pages/Login';
-import { Register } from './pages/Register';
 import { Timesheet } from './pages/Timesheet';
 import { MyRecords } from './pages/MyRecords';
 import { Trends } from './pages/Trends';
 import { Settings } from './pages/Settings';
-import { AdminUsers } from './pages/AdminUsers';
-import { AdminDepartments } from './pages/AdminDepartments';
-import { NotionTest } from './pages/NotionTest';
+
+/** 等本機個人檔案載入完再渲染頁面，避免頁面在 loading 前後 hooks 數量不一致 */
+function Ready({ children }: { children: React.ReactNode }) {
+  const { isLoading } = useUser();
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[50vh]">
+        <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+  return <>{children}</>;
+}
 
 function App() {
   return (
     <ThemeProvider>
-      <AuthProvider>
+      <UserProvider>
         <ProjectProvider>
           <TimeEntryProvider>
             <BrowserRouter>
-            <Layout>
-            <Routes>
-              <Route path="/login" element={<Login />} />
-              <Route path="/register" element={<Register />} />
-              <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-              <Route path="/timesheet" element={<ProtectedRoute><Timesheet /></ProtectedRoute>} />
-              <Route path="/my-records" element={<ProtectedRoute><MyRecords /></ProtectedRoute>} />
-              <Route path="/trends" element={<ProtectedRoute><Trends /></ProtectedRoute>} />
-              <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
-              <Route path="/admin/users" element={<ProtectedRoute><AdminUsers /></ProtectedRoute>} />
-              <Route path="/admin/departments" element={<ProtectedRoute><AdminDepartments /></ProtectedRoute>} />
-              <Route path="/notion-test" element={<ProtectedRoute><NotionTest /></ProtectedRoute>} />
-            </Routes>
+              <Layout>
+                <Ready>
+                  <Routes>
+                    <Route path="/" element={<Dashboard />} />
+                    <Route path="/timesheet" element={<Timesheet />} />
+                    <Route path="/my-records" element={<MyRecords />} />
+                    <Route path="/trends" element={<Trends />} />
+                    <Route path="/settings" element={<Settings />} />
+                  </Routes>
+                </Ready>
               </Layout>
             </BrowserRouter>
           </TimeEntryProvider>
         </ProjectProvider>
-      </AuthProvider>
+      </UserProvider>
     </ThemeProvider>
   );
 }
